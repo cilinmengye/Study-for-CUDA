@@ -6,6 +6,27 @@
 
 const int MAXBC = 128;
 
+int maxDivisorLessThanN0(int N, int n0) {
+    int ans = -1;
+
+    int limit = sqrt(N);
+
+    for (int i = 1; i <= limit; ++i) {
+        if (N % i == 0) {
+            int d1 = i;
+            int d2 = N / i;
+
+            if (d1 < n0)
+                ans = max(ans, d1);
+
+            if (d2 < n0)
+                ans = max(ans, d2);
+        }
+    }
+
+    return ans;  // 若为 -1 说明不存在
+}
+
 template <const int maxSCol>
 __global__ void forward_kernel
     (const float* Q, const float* K, const float* V, const int N, const int d,
@@ -43,6 +64,7 @@ __global__ void forward_kernel
         // 采用此方式加载减轻 bank conflict, 可进一步提升性能
         for (int idx = thidx; idx < tile_size; idx += thnum) {
             // 注意此处我们 K 没有进行转置
+            // j*Bc*d 处理 Tiling偏移
             Kj[idx] = K[qkvo_offset + j * Bc * d + idx];
             Vj[idx] = V[qkvo_offset + j * Bc * d + idx];
         }
@@ -70,7 +92,10 @@ __global__ void forward_kernel
                 float val = 0;
                 for (int x = 0; x < d; x++) {
                     // 注意此处我们 K 没有进行转置
-                    val += Qi[thidx * d + x] * Kj[thidx * d + x];
+                    val += Qi[thidx * d + x] * Kj[y * d + x];
+                    // Qi, Kj 在SMEM中，上述我访问Oi的方式每个thread间隔d取元素
+                    // 这样会带来较为严重的 bank Conflict
+                    // 优化方式只能考虑重写 如何组织 thread block 完成Tiling flash attention
                 }
                 val *= softmax_scale;
                 thmij = fmaxf(thmij, val);
@@ -115,10 +140,10 @@ __global__ void forward_kernel
             for (int idx = thidx; idx < tile_size; idx += thnum) {
                 O[qkvo_offset + i * Br * d + idx] = Oi[idx];
             }
-            __syncthreads();
             // 写回 li, mi
             l[lm_offset + i * Br * 1 + thidx] = new_thlij;
             m[lm_offset + i * Br * 1 + thidx] = new_thmij;
+            __syncthreads();
         }
 
         // 此处__syncthreads();是必须的，否则其他线程还在使用 Kj, Vj 时
@@ -139,13 +164,13 @@ torch::Tensor forward(torch::Tensor Q, torch::Tensor K, torch::Tensor V) {
     
     const int sm_smem = prop.sharedMemPerMultiprocessor;
     const float use_ratio = 0.9;
-    const int used_sm_smem = ceil(sm_smem * use_ratio);
+    const int used_sm_smem = sm_smem * use_ratio;
 
     // --- Shared Memory (SRAM) ---
     // 这是单个 SM 上物理存在的最大 Shared Memory 总量
     std::cout << "Shared Memory per Multiprocessor (SM): " 
               << sm_smem / 1024.0 << " KB" << std::endl;
-    std::cout << "We used " << use_ratio << "Shared Memory per Multiprocessor (SM): "
+    std::cout << "We used " << use_ratio << " Shared Memory per Multiprocessor (SM): "
               << used_sm_smem / 1024.0 << " KB" << std::endl;
 
     const int batch_size = Q.size(0);
@@ -161,11 +186,13 @@ torch::Tensor forward(torch::Tensor Q, torch::Tensor K, torch::Tensor V) {
     // 为代码实现方便直接令 Br == Bc, 且为了实现Sij compute on Chip(on Chip意味则Sij保存在thread Regiser中)
     // 我并不希望Register数据溢出到local mem中，因为这会导致性能严重下降
     // 而我的实现中每个thread处理 Tiling Sij 中的一行，其大小由 Bc 决定，所以 Bc 不能太大
-    const int Bc = std::min(used_sm_smem / 4 / d, MAXBC);
+    int tmpBc = std::min((int)ceil(used_sm_smem / 4 / d / sizeof(float)), MAXBC);
+    // 我强制让 N % Bc == 0, 否则还需要需要边界条件需要处理
+    const int Bc = maxDivisorLessThanN0(N, tmpBc);
     const int Br = Bc;
     
-    const int Tr = ceil(N / Br);
-    const int Tc = ceil(N / Bc);
+    const int Tr = ceil((float)N / Br);
+    const int Tc = ceil((float)N / Bc);
     const float softmax_scale = 1.0 / sqrt(d);
 
     const int real_used_sm_smem = 4 * (Br * d) * sizeof(float);
@@ -204,5 +231,18 @@ torch::Tensor forward(torch::Tensor Q, torch::Tensor K, torch::Tensor V) {
         N, d, Tc, Tr, Bc, Br, softmax_scale,
         l.data_ptr<float>(), m.data_ptr<float>(), O.data_ptr<float>()
     );
+
+    cudaError_t err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        std::cerr << "Kernel launch error: "
+                << cudaGetErrorString(err) << std::endl;
+    }
+
+    cudaDeviceSynchronize();
+    err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        std::cerr << "Kernel execution error: "
+                << cudaGetErrorString(err) << std::endl;
+    }
     return O;
 }

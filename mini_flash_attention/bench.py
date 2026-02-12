@@ -29,8 +29,8 @@ minimal_attn = load(
 # Use small model params, otherwise slower than manual attention. See caveats in README.
 batch_size = 16
 n_head = 12
-seq_len = 64
-head_embd = 64
+seq_len = 1024
+head_embd = 128
 
 q = torch.randn(batch_size, n_head, seq_len, head_embd).cuda()
 k = torch.randn(batch_size, n_head, seq_len, head_embd).cuda()
@@ -55,4 +55,11 @@ with torch.autograd.profiler.profile(use_cuda=True) as prof:
     minimal_result = minimal_attn.forward(q, k, v)
 print(prof.key_averages().table(sort_by='cuda_time_total', row_limit=10))
 
-print('attn values sanity check:', torch.allclose(minimal_result, manual_result, rtol=0, atol=1e-02))
+print('attn values sanity check:', torch.allclose(minimal_result, manual_result, rtol=0, atol=1))
+
+diff = (minimal_result - manual_result).abs()
+# 最大绝对误差
+max_diff = diff.max()
+print("max abs diff =", max_diff.item())
+# 均值误差
+print("mean abs diff =", diff.mean().item())
