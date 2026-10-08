@@ -1,0 +1,1 @@
+nvcc -O3 -std=c++17 -arch=native gemm_cuda.cu -lcublas -o gemm_cuda
