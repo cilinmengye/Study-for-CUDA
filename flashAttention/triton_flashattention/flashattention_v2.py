@@ -1,3 +1,6 @@
+# reference https://github.com/triton-lang/triton/blob/main/python/tutorials/06-fused-attention.py
+# compare with https://github.com/Dao-AILab/flash-attention
+
 """Forward adapted from the Triton FlashAttention-2 tutorial."""
 
 import torch
