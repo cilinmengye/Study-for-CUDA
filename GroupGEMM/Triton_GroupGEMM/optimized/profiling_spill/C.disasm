@@ -1,0 +1,1044 @@
+	.headerflags	@"EF_CUDA_TEXMODE_UNIFIED EF_CUDA_64BIT_ADDRESS EF_CUDA_SM89 EF_CUDA_VIRTUAL_SM(EF_CUDA_SM89)"
+	.elftype	@"ET_EXEC"
+
+
+//--------------------- .text.grouped_matmul_kernel --------------------------
+	.section	.text.grouped_matmul_kernel,"ax",@progbits
+	.sectionflags	@"SHF_BARRIERS=1"
+	.sectioninfo	@"SHI_REGISTERS=128"
+	.align	128
+        .global         grouped_matmul_kernel
+        .type           grouped_matmul_kernel,@function
+        .size           grouped_matmul_kernel,(.L_x_6 - grouped_matmul_kernel)
+        .other          grouped_matmul_kernel,@"STO_CUDA_ENTRY STV_DEFAULT"
+grouped_matmul_kernel:
+.text.grouped_matmul_kernel:
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 73
+        /*0000*/                   IMAD.MOV.U32 R1, RZ, RZ, c[0x0][0x28] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 119
+        /*0010*/                   IMAD.MOV.U32 R0, RZ, RZ, c[0x0][0x188] ;
+        /*0020*/                   ISETP.GE.AND P0, PT, R0, 0x1, PT ;
+        /*0030*/              @!P0 EXIT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 109
+        /*0040*/                   S2UR UR10, SR_CTAID.X ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 119
+        /*0050*/                   UMOV UR4, URZ ;
+        /*0060*/                   UMOV UR5, URZ ;
+        /*0070*/                   UMOV UR6, URZ ;
+.L_x_4:
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 121
+        /*0080*/                   UIMAD UR7, UR5, 0x3, URZ ;
+        /*0090*/                   ULDC.64 UR12, c[0x0][0x178] ;
+        /*00a0*/                   USHF.R.S64 UR8, URZ, 0x1e, UR7 ;
+        /*00b0*/                   USHF.R.S32.HI UR9, URZ, 0x1e, UR7 ;
+        /*00c0*/                   UIADD3 UR7, UP0, UR8, UR12, URZ ;
+        /*00d0*/                   ULDC.64 UR18, c[0x0][0x118] ;
+        /*00e0*/                   UIADD3.X UR8, UR9, UR13, URZ, UP0, !UPT ;
+        /*00f0*/                   IMAD.U32 R2, RZ, RZ, UR7 ;
+        /*0100*/                   IMAD.U32 R3, RZ, RZ, UR8 ;
+        /*0110*/                   LDG.E R4, [R2.64] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 122
+        /*0120*/                   LDG.E R0, [R2.64+0x4] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 121
+        /*0130*/                   R2UR UR11, R4 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 122
+        /*0140*/                   R2UR UR12, R0 ;
+	//## File "/mnt/hdd/users/yxlin/python-envs/flashinfer-cu130/lib/python3.12/site-packages/triton/language/standard.py", line 43
+        /*0150*/                   UIADD3 UR13, UR11, 0x7f, URZ ;
+        /*0160*/                   USHF.R.S32.HI UR8, URZ, 0x1f, UR13 ;
+        /*0170*/                   UIADD3 UR14, UR12, 0x7f, URZ ;
+        /*0180*/                   ULEA.HI UR8, UR8, UR13, URZ, 0x7 ;
+        /*0190*/                   USHF.R.S32.HI UR7, URZ, 0x1f, UR14 ;
+        /*01a0*/                   USHF.R.S32.HI UR8, URZ, 0x7, UR8 ;
+        /*01b0*/                   ULEA.HI UR7, UR7, UR14, URZ, 0x7 ;
+        /*01c0*/                   USHF.R.S32.HI UR7, URZ, 0x7, UR7 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 134
+        /*01d0*/                   UIMAD UR7, UR7, UR8, UR4 ;
+        /*01e0*/                   UISETP.GE.AND UP0, UPT, UR10, UR7, UPT ;
+        /*01f0*/                   UISETP.LT.OR UP0, UPT, UR10, UR4, UP0 ;
+        /*0200*/                   PLOP3.LUT P0, PT, PT, PT, UP0, 0x80, 0x0 ;
+        /*0210*/               @P0 BRA `(.L_x_0) ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 123
+        /*0220*/                   LDG.E R2, [R2.64+0x8] ;
+        /*0230*/                   R2UR UR26, R2 ;
+        /*0240*/                   UIADD3 UR23, UR26, 0x3f, URZ ;
+        /*0250*/                   UISETP.GE.AND UP0, UPT, UR23, 0x40, UPT ;
+.L_x_3:
+        /*0260*/                   USHF.L.U32 UR15, UR5, 0x3, URZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 121
+        /*0270*/                   UIMAD UR9, UR5, 0x3, URZ ;
+        /*0280*/                   ULDC.64 UR20, c[0x0][0x170] ;
+        /*0290*/                   USHF.L.U64.HI UR7, UR5, 0x3, UR6 ;
+        /*02a0*/                   USHF.R.S64 UR16, URZ, 0x1e, UR9 ;
+        /*02b0*/                   UIADD3 UR8, UP1, UR15, UR20, URZ ;
+        /*02c0*/                   ULDC.64 UR24, c[0x0][0x180] ;
+        /*02d0*/                   USHF.R.S32.HI UR17, URZ, 0x1e, UR9 ;
+        /*02e0*/                   UIADD3 UR16, UP2, UR16, UR24, URZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 144
+        /*02f0*/                   IMAD.U32 R2, RZ, RZ, UR8 ;
+        /*0300*/                   UIADD3.X UR9, UR7, UR21, URZ, UP1, !UPT ;
+        /*0310*/                   UIADD3.X UR17, UR17, UR25, URZ, UP2, !UPT ;
+        /*0320*/                   IMAD.U32 R6, RZ, RZ, UR16 ;
+        /*0330*/                   IMAD.U32 R3, RZ, RZ, UR9 ;
+        /*0340*/                   IMAD.U32 R7, RZ, RZ, UR17 ;
+        /*0350*/                   LDG.E.64 R2, [R2.64] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 139
+        /*0360*/                   LDG.E R8, [R6.64+0x8] ;
+	//## File "/mnt/hdd/users/yxlin/python-envs/flashinfer-cu130/lib/python3.12/site-packages/triton/language/standard.py", line 43
+        /*0370*/                   USHF.R.S32.HI UR8, URZ, 0x1f, UR14 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 164
+        /*0380*/                   PLOP3.LUT P0, PT, PT, PT, UP0, 0x40, 0x0 ;
+	//## File "/mnt/hdd/users/yxlin/python-envs/flashinfer-cu130/lib/python3.12/site-packages/triton/language/standard.py", line 43
+        /*0390*/                   UIADD3 UR9, UR12, 0x7f, URZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 164
+        /*03a0*/                   IMAD.MOV.U32 R60, RZ, RZ, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 148
+        /*03b0*/                   UIADD3 UR21, -UR4, UR10, URZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 164
+        /*03c0*/                   IMAD.MOV.U32 R63, RZ, RZ, RZ ;
+	//## File "/mnt/hdd/users/yxlin/python-envs/flashinfer-cu130/lib/python3.12/site-packages/triton/language/standard.py", line 43
+        /*03d0*/                   ULEA.HI UR8, UR8, UR9, URZ, 0x7 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 164
+        /*03e0*/                   IMAD.MOV.U32 R36, RZ, RZ, RZ ;
+        /*03f0*/                   IMAD.MOV.U32 R39, RZ, RZ, RZ ;
+	//## File "/mnt/hdd/users/yxlin/python-envs/flashinfer-cu130/lib/python3.12/site-packages/triton/language/standard.py", line 43
+        /*0400*/                   USHF.R.S32.HI UR22, URZ, 0x7, UR8 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 149
+        /*0410*/                   IMAD.U32 R15, RZ, RZ, UR21 ;
+        /*0420*/                   UMOV UR8, URZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 164
+        /*0430*/                   IMAD.MOV.U32 R48, RZ, RZ, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 149
+        /*0440*/                   IMAD.U32 R5, RZ, RZ, UR22 ;
+        /*0450*/                   IABS R10, R15 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 164
+        /*0460*/                   IMAD.MOV.U32 R51, RZ, RZ, RZ ;
+        /*0470*/                   IMAD.MOV.U32 R40, RZ, RZ, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 149
+        /*0480*/                   IABS R9, R5.reuse ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 164
+        /*0490*/                   IMAD.MOV.U32 R43, RZ, RZ, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 149
+        /*04a0*/                   IABS R11, R5 ;
+        /*04b0*/                   IMAD.MOV.U32 R5, RZ, RZ, R10 ;
+        /*04c0*/                   R2UR UR24, R9 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 164
+        /*04d0*/                   IMAD.MOV.U32 R56, RZ, RZ, RZ ;
+        /*04e0*/                   IMAD.MOV.U32 R59, RZ, RZ, RZ ;
+        /*04f0*/                   IMAD.MOV.U32 R52, RZ, RZ, RZ ;
+        /*0500*/                   IMAD.MOV.U32 R55, RZ, RZ, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 149
+        /*0510*/                   R2UR UR17, R5 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 164
+        /*0520*/                   IMAD.MOV.U32 R44, RZ, RZ, RZ ;
+        /*0530*/                   IMAD.MOV.U32 R47, RZ, RZ, RZ ;
+        /*0540*/                   IMAD.MOV.U32 R64, RZ, RZ, RZ ;
+        /*0550*/                   IMAD.MOV.U32 R67, RZ, RZ, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 149
+        /*0560*/                   I2F.RP R0, UR24 ;
+        /*0570*/                   MUFU.RCP R0, R0 ;
+        /*0580*/                   IADD3 R4, R0, 0xffffffe, RZ ;
+        /*0590*/                   IMAD.MOV R0, RZ, RZ, -R11 ;
+        /*05a0*/                   R2UR UR20, R0 ;
+        /*05b0*/                   F2I.FTZ.U32.TRUNC.NTZ R4, R4 ;
+        /*05c0*/                   S2R R0, SR_TID.X ;
+        /*05d0*/                   R2UR UR9, R4 ;
+        /*05e0*/                   SHF.R.U32.HI R116, RZ, 0x7, R0 ;
+        /*05f0*/                   SGXT.U32 R116, R116, 0x2 ;
+        /*0600*/                   UIADD3 UR16, URZ, -UR9, URZ ;
+        /*0610*/                   UIMAD UR16, UR16, UR24, URZ ;
+        /*0620*/                   UIMAD.WIDE.U32 UR8, UR9, UR16, UR8 ;
+        /*0630*/                   UIMAD.WIDE.U32 UR8, UR9, UR17, URZ ;
+        /*0640*/                   UIMAD UR8, UR9, UR20, UR17 ;
+        /*0650*/                   UISETP.GT.U32.AND UP1, UPT, UR24, UR8, UPT ;
+        /*0660*/                   @!UP1 UIADD3 UR8, UR8, -UR24, URZ ;
+        /*0670*/                   @!UP1 UIADD3 UR9, UR9, 0x1, URZ ;
+        /*0680*/                   UISETP.GE.U32.AND UP2, UPT, UR8, UR24, UPT ;
+        /*0690*/                   ULOP3.LUT UR8, UR21, UR22, URZ, 0x3c, !UPT ;
+        /*06a0*/                   UISETP.GE.AND UP1, UPT, UR8, URZ, UPT ;
+        /*06b0*/                   @UP2 UIADD3 UR9, UR9, 0x1, URZ ;
+        /*06c0*/                   UISETP.NE.AND UP2, UPT, UR22, URZ, UPT ;
+        /*06d0*/                   UMOV UR16, UR9 ;
+        /*06e0*/                   @!UP1 UIADD3 UR16, -UR16, URZ, URZ ;
+        /*06f0*/                   @!UP2 ULOP3.LUT UR16, URZ, UR22, URZ, 0x33, !UPT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 150
+        /*0700*/                   UIADD3 UR8, -UR16, URZ, URZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 153
+        /*0710*/                   USHF.L.U32 UR28, UR16, 0x7, URZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 150
+        /*0720*/                   UIMAD UR8, UR22, UR8, UR21 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 154
+        /*0730*/                   USHF.L.U32 UR17, UR8, 0x7, URZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 153
+        /*0740*/                   LEA.HI R85, R0, UR28, RZ, 0x19 ;
+        /*0750*/                   LOP3.LUT R116, R116, UR28, RZ, 0xfc, !PT ;
+        /*0760*/                   IADD3 R115, R85.reuse, 0x4, RZ ;
+        /*0770*/                   IADD3 R113, R85.reuse, 0xc, RZ ;
+        /*0780*/                   IADD3 R111, R85.reuse, 0x14, RZ ;
+        /*0790*/                   IADD3 R109, R85, 0x1c, RZ ;
+        /*07a0*/                   IADD3 R107, R85.reuse, 0x24, RZ ;
+        /*07b0*/                   IADD3 R105, R85.reuse, 0x2c, RZ ;
+        /*07c0*/                   IADD3 R103, R85.reuse, 0x34, RZ ;
+        /*07d0*/                   IADD3 R101, R85.reuse, 0x3c, RZ ;
+        /*07e0*/                   IADD3 R99, R85.reuse, 0x44, RZ ;
+        /*07f0*/                   IADD3 R97, R85, 0x4c, RZ ;
+        /*0800*/                   IADD3 R95, R85.reuse, 0x54, RZ ;
+        /*0810*/                   IADD3 R93, R85.reuse, 0x5c, RZ ;
+        /*0820*/                   IADD3 R91, R85.reuse, 0x64, RZ ;
+        /*0830*/                   IADD3 R89, R85.reuse, 0x6c, RZ ;
+        /*0840*/                   IADD3 R87, R85.reuse, 0x74, RZ ;
+        /*0850*/                   IADD3 R85, R85, 0x7c, RZ ;
+        /*0860*/                   LOP3.LUT R114, R116.reuse, 0x8, RZ, 0xfc, !PT ;
+        /*0870*/                   LOP3.LUT R112, R116.reuse, 0x10, RZ, 0xfc, !PT ;
+        /*0880*/                   LOP3.LUT R110, R116.reuse, 0x18, RZ, 0xfc, !PT ;
+        /*0890*/                   LOP3.LUT R108, R116.reuse, 0x20, RZ, 0xfc, !PT ;
+        /*08a0*/                   LOP3.LUT R106, R116.reuse, 0x28, RZ, 0xfc, !PT ;
+        /*08b0*/                   LOP3.LUT R104, R116, 0x30, RZ, 0xfc, !PT ;
+        /*08c0*/                   LOP3.LUT R102, R116.reuse, 0x38, RZ, 0xfc, !PT ;
+        /*08d0*/                   LOP3.LUT R100, R116.reuse, 0x40, RZ, 0xfc, !PT ;
+        /*08e0*/                   LOP3.LUT R98, R116.reuse, 0x48, RZ, 0xfc, !PT ;
+        /*08f0*/                   LOP3.LUT R96, R116.reuse, 0x50, RZ, 0xfc, !PT ;
+        /*0900*/                   LOP3.LUT R94, R116.reuse, 0x58, RZ, 0xfc, !PT ;
+        /*0910*/                   LOP3.LUT R92, R116, 0x60, RZ, 0xfc, !PT ;
+        /*0920*/                   LOP3.LUT R90, R116.reuse, 0x68, RZ, 0xfc, !PT ;
+        /*0930*/                   LOP3.LUT R88, R116.reuse, 0x70, RZ, 0xfc, !PT ;
+        /*0940*/                   LOP3.LUT R86, R116, 0x78, RZ, 0xfc, !PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 144
+        /*0950*/                   R2UR UR25, R3 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 154
+        /*0960*/                   IMAD.U32 R3, RZ, RZ, UR17 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 144
+        /*0970*/                   R2UR UR24, R2 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 154
+        /*0980*/                   LOP3.LUT R84, R3, 0x7f, R0, 0xf8, !PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 139
+        /*0990*/                   R2UR UR27, R8 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 164
+        /*09a0*/               @P0 BRA `(.L_x_1) ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 138
+        /*09b0*/                   LDG.E R16, [R6.64+0x4] ;
+        /*09c0*/                   ULDC.64 UR8, c[0x0][0x168] ;
+        /*09d0*/                   UIADD3 UR8, UP2, UR15, UR8, URZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 137
+        /*09e0*/                   LDG.E R12, [R6.64] ;
+        /*09f0*/                   ULDC.64 UR20, c[0x0][0x160] ;
+        /*0a00*/                   UIADD3.X UR9, UR7, UR9, URZ, UP2, !UPT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 143
+        /*0a10*/                   IMAD.U32 R10, RZ, RZ, UR8 ;
+        /*0a20*/                   UIADD3 UR15, UP1, UR15, UR20, URZ ;
+        /*0a30*/                   IMAD.U32 R11, RZ, RZ, UR9 ;
+        /*0a40*/                   UIADD3.X UR7, UR7, UR21, URZ, UP1, !UPT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 142
+        /*0a50*/                   IMAD.U32 R8, RZ, RZ, UR15 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 143
+        /*0a60*/                   LDG.E.64 R10, [R10.64] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 142
+        /*0a70*/                   IMAD.U32 R9, RZ, RZ, UR7 ;
+        /*0a80*/                   LDG.E.64 R8, [R8.64] ;
+        /*0a90*/                   SHF.R.U32.HI R4, RZ, 0x4, R0 ;
+        /*0aa0*/                   LEA.HI R2, R0, 0x20, RZ, 0x1c ;
+        /*0ab0*/                   SGXT.U32 R4, R4, 0x5 ;
+        /*0ac0*/                   LOP3.LUT R3, R0, 0xf, RZ, 0xc0, !PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 164
+        /*0ad0*/                   UIMAD UR7, UR22, UR16, URZ ;
+        /*0ae0*/                   IMAD.SHL.U32 R14, R3, 0x8, RZ ;
+        /*0af0*/                   LOP3.LUT R5, R0, 0x7, RZ, 0xc0, !PT ;
+        /*0b00*/                   IMAD.U32 R7, RZ, RZ, UR7 ;
+        /*0b10*/                   IMAD R6, R15, 0x80, R14 ;
+        /*0b20*/                   USHF.R.S32.HI UR7, URZ, 0x1f, UR23 ;
+        /*0b30*/                   UIADD3 UR8, UR26, 0x3f, URZ ;
+        /*0b40*/                   IMAD R6, R7, -0x80, R6 ;
+        /*0b50*/                   CS2R R60, SRZ ;
+        /*0b60*/                   CS2R R62, SRZ ;
+        /*0b70*/                   ULEA.HI UR8, UR7, UR8, URZ, 0x6 ;
+        /*0b80*/                   CS2R R36, SRZ ;
+        /*0b90*/                   CS2R R38, SRZ ;
+        /*0ba0*/                   CS2R R48, SRZ ;
+        /*0bb0*/                   CS2R R50, SRZ ;
+        /*0bc0*/                   CS2R R40, SRZ ;
+        /*0bd0*/                   CS2R R42, SRZ ;
+        /*0be0*/                   CS2R R56, SRZ ;
+        /*0bf0*/                   CS2R R58, SRZ ;
+        /*0c00*/                   CS2R R52, SRZ ;
+        /*0c10*/                   CS2R R54, SRZ ;
+        /*0c20*/                   CS2R R44, SRZ ;
+        /*0c30*/                   CS2R R46, SRZ ;
+        /*0c40*/                   CS2R R64, SRZ ;
+        /*0c50*/                   CS2R R66, SRZ ;
+        /*0c60*/                   USHF.R.S32.HI UR8, URZ, 0x6, UR8 ;
+        /*0c70*/                   UMOV UR7, URZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 138
+        /*0c80*/                   R2UR UR9, R16 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 160
+        /*0c90*/                   IMAD R125, R2, UR9, RZ ;
+        /*0ca0*/                   IMAD R13, R4, UR9, RZ ;
+        /*0cb0*/                   LEA R124, P0, R125, R10.reuse, 0x1 ;
+        /*0cc0*/                   LEA R122, P1, R13, R10, 0x1 ;
+        /*0cd0*/                   LEA.HI.X.SX32 R125, R125, R11.reuse, 0x1, P0 ;
+        /*0ce0*/                   LEA.HI.X.SX32 R123, R13, R11, 0x1, P1 ;
+        /*0cf0*/                   SHF.R.U32.HI R11, RZ, 0x3, R0 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 119
+        /*0d00*/                   LEA.HI R10, R0, 0x40, RZ, 0x1d ;
+        /*0d10*/                   SGXT.U32 R11, R11, 0x6 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 164
+        /*0d20*/                   IMAD.WIDE.U32 R8, R5, 0x10, R8 ;
+        /*0d30*/                   IADD3 R10, R10, UR28, RZ ;
+        /*0d40*/                   IADD3 R7, R11.reuse, UR28, RZ ;
+        /*0d50*/                   IMAD.MOV.U32 R120, RZ, RZ, R8 ;
+        /*0d60*/                   LOP3.LUT R11, R11, UR28, RZ, 0xfc, !PT ;
+        /*0d70*/                   IMAD.MOV.U32 R121, RZ, RZ, R9 ;
+        /*0d80*/                   IADD3 R9, R14, UR17, RZ ;
+        /*0d90*/                   IMAD R7, R12.reuse, R7, RZ ;
+        /*0da0*/                   IMAD R8, R12, R10, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 184
+        /*0db0*/                   USHF.L.U32 UR9, UR9, 0x6, URZ ;
+.L_x_2:
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 167
+        /*0dc0*/                   LEA R17, R5, UR7, 0x3 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*0dd0*/                   PRMT R78, RZ, 0x7610, R78 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 167
+        /*0de0*/                   IADD3 R12, R17.reuse, 0x1, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 168
+        /*0df0*/                   ISETP.GE.AND P1, PT, R17.reuse, UR26, PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 167
+        /*0e00*/                   IADD3 R13, R17, 0x2, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 168
+        /*0e10*/                   ISETP.GE.AND P0, PT, R12, UR26, PT ;
+        /*0e20*/                   ISETP.LT.AND P3, PT, R11, UR11, !P1 ;
+        /*0e30*/                   ISETP.GE.AND P1, PT, R13, UR26, PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 167
+        /*0e40*/                   IMAD.WIDE R12, R7, 0x2, R120 ;
+        /*0e50*/                   ISETP.LT.AND P4, PT, R11, UR11, !P0 ;
+        /*0e60*/                   ISETP.LT.AND P5, PT, R11, UR11, !P1 ;
+        /*0e70*/                   IADD3 R14, R17.reuse, 0x3, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*0e80*/                   PRMT R79, RZ, 0x7610, R79 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 167
+        /*0e90*/                   IADD3 R18, R17, 0x4, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*0ea0*/               @P3 LDG.E.U16 R78, [R12.64] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 168
+        /*0eb0*/                   ISETP.GE.AND P2, PT, R14, UR26, PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*0ec0*/                   PRMT R76, RZ, 0x7610, R76 ;
+        /*0ed0*/               @P4 LDG.E.U16 R79, [R12.64+0x2] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 168
+        /*0ee0*/                   ISETP.GE.AND P3, PT, R18, UR26, PT ;
+        /*0ef0*/                   ISETP.LT.AND P4, PT, R11.reuse, UR11, !P2 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*0f00*/               @P5 LDG.E.U16 R76, [R12.64+0x4] ;
+        /*0f10*/                   ISETP.LT.AND P5, PT, R11, UR11, !P3 ;
+        /*0f20*/                   PRMT R77, RZ, 0x7610, R77 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 167
+        /*0f30*/                   IADD3 R14, R17, 0x5, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*0f40*/                   PRMT R74, RZ, 0x7610, R74 ;
+        /*0f50*/                   PRMT R75, RZ, 0x7610, R75 ;
+        /*0f60*/               @P4 LDG.E.U16 R77, [R12.64+0x6] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 168
+        /*0f70*/                   ISETP.GE.AND P4, PT, R14, UR26, PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*0f80*/                   PRMT R70, RZ, 0x7610, R70 ;
+        /*0f90*/               @P5 LDG.E.U16 R74, [R12.64+0x8] ;
+        /*0fa0*/                   ISETP.LT.AND P5, PT, R11, UR11, !P4 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 167
+        /*0fb0*/                   IADD3 R14, R17, 0x6, RZ ;
+        /*0fc0*/                   P2R R15, PR, RZ, 0x2 ;
+        /*0fd0*/                   P2R R16, PR, RZ, 0x1 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*0fe0*/               @P5 LDG.E.U16 R75, [R12.64+0xa] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 168
+        /*0ff0*/                   ISETP.GE.AND P5, PT, R14, UR26, PT ;
+        /*1000*/                   ISETP.LT.AND P6, PT, R11, UR11, !P5 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 167
+        /*1010*/                   IADD3 R14, R17.reuse, 0x7, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 168
+        /*1020*/                   ISETP.GE.AND P0, PT, R17, UR26, PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*1030*/               @P6 LDG.E.U16 R70, [R12.64+0xc] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 168
+        /*1040*/                   ISETP.GE.AND P6, PT, R14, UR26, PT ;
+        /*1050*/                   ISETP.LT.AND P1, PT, R11, UR11, !P6 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*1060*/                   PRMT R71, RZ, 0x7610, R71 ;
+        /*1070*/                   ISETP.LT.AND P0, PT, R10, UR11, !P0 ;
+        /*1080*/                   PRMT R72, RZ, 0x7610, R72 ;
+        /*1090*/               @P1 LDG.E.U16 R71, [R12.64+0xe] ;
+        /*10a0*/                   ISETP.NE.AND P1, PT, R15, RZ, PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 167
+        /*10b0*/                   IMAD.WIDE R14, R8, 0x2, R120 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*10c0*/               @P0 LDG.E.U16 R72, [R14.64] ;
+        /*10d0*/                   ISETP.NE.AND P0, PT, R16, RZ, PT ;
+        /*10e0*/                   ISETP.LT.AND P0, PT, R10.reuse, UR11, !P0 ;
+        /*10f0*/                   PRMT R73, RZ, 0x7610, R73 ;
+        /*1100*/                   ISETP.LT.AND P1, PT, R10.reuse, UR11, !P1 ;
+        /*1110*/                   ISETP.LT.AND P2, PT, R10.reuse, UR11, !P2 ;
+        /*1120*/                   ISETP.LT.AND P3, PT, R10.reuse, UR11, !P3 ;
+        /*1130*/                   ISETP.LT.AND P4, PT, R10, UR11, !P4 ;
+        /*1140*/                   ISETP.LT.AND P5, PT, R10.reuse, UR11, !P5 ;
+        /*1150*/               @P0 LDG.E.U16 R73, [R14.64+0x2] ;
+        /*1160*/                   ISETP.LT.AND P6, PT, R10, UR11, !P6 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 167
+        /*1170*/                   IADD3 R16, R4, UR7, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*1180*/                   PRMT R68, RZ, 0x7610, R68 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 169
+        /*1190*/                   ISETP.GE.AND P0, PT, R16, UR26, PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*11a0*/                   PRMT R69, RZ, 0x7610, R69 ;
+        /*11b0*/                   PRMT R32, RZ, 0x7610, R32 ;
+        /*11c0*/               @P1 LDG.E.U16 R68, [R14.64+0x4] ;
+        /*11d0*/                   PRMT R33, RZ, 0x7610, R33 ;
+        /*11e0*/                   PRMT R16, RZ, 0x7610, R16 ;
+        /*11f0*/               @P2 LDG.E.U16 R69, [R14.64+0x6] ;
+        /*1200*/                   PRMT R17, RZ, 0x7610, R17 ;
+        /*1210*/               @P3 LDG.E.U16 R32, [R14.64+0x8] ;
+        /*1220*/               @P4 LDG.E.U16 R33, [R14.64+0xa] ;
+        /*1230*/               @P5 LDG.E.U16 R16, [R14.64+0xc] ;
+        /*1240*/               @P6 LDG.E.U16 R17, [R14.64+0xe] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 168
+        /*1250*/                   IADD3 R12, R2, UR7, RZ ;
+        /*1260*/                   ISETP.LT.AND P4, PT, R9.reuse, UR12, !P0 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 169
+        /*1270*/                   ISETP.GE.AND P1, PT, R12, UR26, PT ;
+        /*1280*/                   IADD3 R12, R9.reuse, 0x1, RZ ;
+        /*1290*/                   IADD3 R19, R9.reuse, 0x2, RZ ;
+        /*12a0*/                   IADD3 R21, R9, 0x3, RZ ;
+        /*12b0*/                   ISETP.LT.AND P2, PT, R12, UR12, !P0 ;
+        /*12c0*/                   ISETP.LT.AND P3, PT, R12, UR12, !P1 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 167
+        /*12d0*/                   IMAD.WIDE R12, R6, 0x2, R122 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 179
+        /*12e0*/                   PRMT R34, RZ, 0x7610, R34 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*12f0*/                   BAR.SYNC.DEFER_BLOCKING 0x0 ;
+        /*1300*/                   ISETP.LT.AND P6, PT, R19, UR12, !P0 ;
+        /*1310*/                   ISETP.LT.AND P5, PT, R21, UR12, !P0 ;
+        /*1320*/                   IADD3 R24, R9, 0x4, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 179
+        /*1330*/                   PRMT R35, RZ, 0x7610, R35 ;
+        /*1340*/                   PRMT R26, RZ, 0x7610, R26 ;
+        /*1350*/                   PRMT R27, RZ, 0x7610, R27 ;
+        /*1360*/                   IADD3 R29, R9.reuse, 0x5, RZ ;
+        /*1370*/                   IADD3 R25, R9.reuse, 0x6, RZ ;
+        /*1380*/                   IADD3 R20, R9, 0x7, RZ ;
+        /*1390*/               @P4 LDG.E.U16 R34, [R12.64] ;
+        /*13a0*/                   ISETP.LT.AND P4, PT, R24, UR12, !P0 ;
+        /*13b0*/                   PRMT R18, RZ, 0x7610, R18 ;
+        /*13c0*/               @P2 LDG.E.U16 R35, [R12.64+0x2] ;
+        /*13d0*/                   ISETP.LT.AND P2, PT, R29, UR12, !P0 ;
+        /*13e0*/               @P6 LDG.E.U16 R26, [R12.64+0x4] ;
+        /*13f0*/                   ISETP.LT.AND P6, PT, R25, UR12, !P0 ;
+        /*1400*/                   ISETP.LT.AND P0, PT, R20, UR12, !P0 ;
+        /*1410*/               @P5 LDG.E.U16 R27, [R12.64+0x6] ;
+        /*1420*/                   ISETP.LT.AND P5, PT, R9, UR12, !P1 ;
+        /*1430*/               @P4 LDG.E.U16 R18, [R12.64+0x8] ;
+        /*1440*/                   ISETP.LT.AND P4, PT, R19, UR12, !P1 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 167
+        /*1450*/                   IMAD.WIDE R14, R6, 0x2, R124 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 179
+        /*1460*/                   PRMT R23, RZ, 0x7610, R23 ;
+        /*1470*/                   PRMT R19, RZ, 0x7610, R19 ;
+        /*1480*/                   PRMT R22, RZ, 0x7610, R22 ;
+        /*1490*/                   PRMT R28, RZ, 0x7610, R28 ;
+        /*14a0*/               @P2 LDG.E.U16 R23, [R12.64+0xa] ;
+        /*14b0*/                   ISETP.LT.AND P2, PT, R21, UR12, !P1 ;
+        /*14c0*/               @P6 LDG.E.U16 R19, [R12.64+0xc] ;
+        /*14d0*/                   ISETP.LT.AND P6, PT, R24, UR12, !P1 ;
+        /*14e0*/               @P0 LDG.E.U16 R22, [R12.64+0xe] ;
+        /*14f0*/                   ISETP.LT.AND P0, PT, R29, UR12, !P1 ;
+        /*1500*/               @P5 LDG.E.U16 R28, [R14.64] ;
+        /*1510*/                   ISETP.LT.AND P5, PT, R25, UR12, !P1 ;
+        /*1520*/                   ISETP.LT.AND P1, PT, R20, UR12, !P1 ;
+        /*1530*/                   PRMT R25, RZ, 0x7610, R25 ;
+        /*1540*/                   PRMT R29, RZ, 0x7610, R29 ;
+        /*1550*/                   PRMT R24, RZ, 0x7610, R24 ;
+        /*1560*/                   PRMT R30, RZ, 0x7610, R30 ;
+        /*1570*/               @P3 LDG.E.U16 R25, [R14.64+0x2] ;
+        /*1580*/                   PRMT R21, RZ, 0x7610, R21 ;
+        /*1590*/                   PRMT R31, RZ, 0x7610, R31 ;
+        /*15a0*/               @P4 LDG.E.U16 R29, [R14.64+0x4] ;
+        /*15b0*/                   PRMT R20, RZ, 0x7610, R20 ;
+        /*15c0*/               @P2 LDG.E.U16 R24, [R14.64+0x6] ;
+        /*15d0*/               @P6 LDG.E.U16 R30, [R14.64+0x8] ;
+        /*15e0*/               @P0 LDG.E.U16 R21, [R14.64+0xa] ;
+        /*15f0*/               @P5 LDG.E.U16 R31, [R14.64+0xc] ;
+        /*1600*/               @P1 LDG.E.U16 R20, [R14.64+0xe] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*1610*/                   PRMT R12, R78, 0x5410, R79 ;
+        /*1620*/                   PRMT R13, R76, 0x5410, R77 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 109
+        /*1630*/                   IMAD.SHL.U32 R76, R0, 0x10, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*1640*/                   PRMT R14, R74, 0x5410, R75 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 109
+        /*1650*/                   IMAD.SHL.U32 R74, R0, 0x2, RZ ;
+        /*1660*/                   LOP3.LUT R75, R76, 0x1ff0, RZ, 0xc0, !PT ;
+        /*1670*/                   LOP3.LUT R74, R75, 0x70, R74, 0x78, !PT ;
+        /*1680*/                   IMAD.SHL.U32 R77, R0, 0x100, RZ ;
+        /*1690*/                   LOP3.LUT R76, R76, 0x1870, RZ, 0xc0, !PT ;
+        /*16a0*/                   LOP3.LUT R78, R77, 0x1f00, RZ, 0xc0, !PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*16b0*/                   PRMT R15, R70, 0x5410, R71 ;
+        /*16c0*/                   STS.128 [R74], R12 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 109
+        /*16d0*/                   IMAD R78, R5, 0x10, R78 ;
+        /*16e0*/                   SHF.R.U32.HI R71, RZ, 0x1, R0.reuse ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*16f0*/                   PRMT R12, R72, 0x5410, R73 ;
+        /*1700*/                   PRMT R13, R68, 0x5410, R69 ;
+        /*1710*/                   PRMT R14, R32, 0x5410, R33 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 109
+        /*1720*/                   LOP3.LUT R32, R75, 0x70, R0, 0x78, !PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*1730*/                   PRMT R15, R16, 0x5410, R17 ;
+        /*1740*/                   STS.128 [R74+0x2000], R12 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 109
+        /*1750*/                   IMAD R117, R3, 0x80, R76 ;
+        /*1760*/                   LOP3.LUT R118, R78, 0x30, R71, 0x78, !PT ;
+        /*1770*/                   LOP3.LUT R117, R117, 0x10, R0, 0x78, !PT ;
+        /*1780*/                   LOP3.LUT R119, R118, 0x40, RZ, 0x3c, !PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 179
+        /*1790*/                   PRMT R16, R34, 0x5410, R35 ;
+        /*17a0*/                   PRMT R17, R26, 0x5410, R27 ;
+        /*17b0*/                   PRMT R18, R18, 0x5410, R23 ;
+        /*17c0*/                   PRMT R19, R19, 0x5410, R22 ;
+        /*17d0*/                   STS.128 [R32+0x4000], R16 ;
+        /*17e0*/                   PRMT R28, R28, 0x5410, R25 ;
+        /*17f0*/                   PRMT R29, R29, 0x5410, R24 ;
+        /*1800*/                   PRMT R30, R30, 0x5410, R21 ;
+        /*1810*/                   PRMT R31, R31, 0x5410, R20 ;
+        /*1820*/                   STS.128 [R32+0x6000], R28 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*1830*/                   BAR.SYNC.DEFER_BLOCKING 0x0 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 109
+        /*1840*/                   LOP3.LUT R76, R117, 0x20, RZ, 0x3c, !PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*1850*/                   LDSM.16.M88.4 R72, [R117] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 179
+        /*1860*/                   LDSM.16.MT88.4 R24, [R118+0x4000] ;
+        /*1870*/                   LDSM.16.MT88.4 R12, [R118+0x4080] ;
+        /*1880*/                   LDSM.16.MT88.4 R16, [R119+0x4000] ;
+        /*1890*/                   LDSM.16.MT88.4 R20, [R119+0x4080] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*18a0*/                   LDSM.16.M88.4 R68, [R117+0x2000] ;
+        /*18b0*/                   LDSM.16.M88.4 R32, [R76] ;
+        /*18c0*/                   LDSM.16.M88.4 R28, [R76+0x2000] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 180
+        /*18d0*/                   HMMA.16816.F32 R60, R72.reuse, R24, R60 ;
+        /*18e0*/                   HMMA.16816.F32 R48, R72.reuse, R12, R48 ;
+        /*18f0*/                   HMMA.16816.F32 R36, R72.reuse, R16, R36 ;
+        /*1900*/                   HMMA.16816.F32 R40, R72, R20, R40 ;
+        /*1910*/                   HMMA.16816.F32 R56, R68.reuse, R24, R56 ;
+        /*1920*/                   HMMA.16816.F32 R44, R68.reuse, R12, R44 ;
+        /*1930*/                   HMMA.16816.F32 R52, R68.reuse, R16, R52 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 109
+        /*1940*/                   LOP3.LUT R16, R117.reuse, 0x40, RZ, 0x3c, !PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 180
+        /*1950*/                   HMMA.16816.F32 R64, R68, R20, R64 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 179
+        /*1960*/                   LDSM.16.MT88.4 R68, [R119+0x6000] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*1970*/                   LDSM.16.M88.4 R76, [R16] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 180
+        /*1980*/                   HMMA.16816.F32 R60, R32.reuse, R26, R60 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*1990*/                   LDSM.16.M88.4 R80, [R16+0x2000] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 180
+        /*19a0*/                   HMMA.16816.F32 R48, R32.reuse, R14, R48 ;
+        /*19b0*/                   HMMA.16816.F32 R36, R32.reuse, R18, R36 ;
+        /*19c0*/                   HMMA.16816.F32 R40, R32, R22, R40 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 179
+        /*19d0*/                   LDSM.16.MT88.4 R32, [R118+0x6080] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 180
+        /*19e0*/                   HMMA.16816.F32 R72, R28, R26, R56 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 179
+        /*19f0*/                   LDSM.16.MT88.4 R56, [R118+0x6000] ;
+        /*1a00*/                   LDSM.16.MT88.4 R24, [R119+0x6080] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 109
+        /*1a10*/                   LOP3.LUT R117, R117, 0x60, RZ, 0x3c, !PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 180
+        /*1a20*/                   HMMA.16816.F32 R52, R28.reuse, R18, R52 ;
+        /*1a30*/                   HMMA.16816.F32 R44, R28.reuse, R14, R44 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*1a40*/                   LDSM.16.M88.4 R12, [R117] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 180
+        /*1a50*/                   HMMA.16816.F32 R28, R28, R22, R64 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 178
+        /*1a60*/                   LDSM.16.M88.4 R64, [R117+0x2000] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 180
+        /*1a70*/                   HMMA.16816.F32 R36, R76.reuse, R68, R36 ;
+        /*1a80*/                   HMMA.16816.F32 R48, R76.reuse, R32, R48 ;
+        /*1a90*/                   HMMA.16816.F32 R60, R76.reuse, R56, R60 ;
+        /*1aa0*/                   HMMA.16816.F32 R40, R76, R24, R40 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 164
+        /*1ab0*/                   UIADD3 UR8, UR8, -0x1, URZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 180
+        /*1ac0*/                   HMMA.16816.F32 R72, R80.reuse, R56, R72 ;
+        /*1ad0*/                   HMMA.16816.F32 R44, R80.reuse, R32, R44 ;
+        /*1ae0*/                   HMMA.16816.F32 R52, R80.reuse, R68, R52 ;
+        /*1af0*/                   HMMA.16816.F32 R28, R80, R24, R28 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 164
+        /*1b00*/                   ISETP.NE.U32.AND P0, PT, RZ, UR8, PT ;
+        /*1b10*/                   IADD3 R120, P1, R120, 0x80, RZ ;
+        /*1b20*/                   UIADD3 UR7, UR7, 0x40, URZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 180
+        /*1b30*/                   HMMA.16816.F32 R60, R12, R58, R60 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 164
+        /*1b40*/                   IMAD.X R121, RZ, RZ, R121, P1 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 180
+        /*1b50*/                   HMMA.16816.F32 R48, R12.reuse, R34, R48 ;
+        /*1b60*/                   HMMA.16816.F32 R36, R12.reuse, R70, R36 ;
+        /*1b70*/                   HMMA.16816.F32 R40, R12, R26, R40 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 164
+        /*1b80*/                   IMAD.U32 R13, RZ, RZ, UR9 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 180
+        /*1b90*/                   HMMA.16816.F32 R56, R64, R58, R72 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 164
+        /*1ba0*/                   IMAD.U32 R15, RZ, RZ, UR9 ;
+        /*1bb0*/                   IMAD.WIDE R124, R13, 0x2, R124 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 180
+        /*1bc0*/                   HMMA.16816.F32 R52, R64, R70, R52 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 164
+        /*1bd0*/                   IMAD.WIDE R122, R15, 0x2, R122 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 180
+        /*1be0*/                   HMMA.16816.F32 R44, R64.reuse, R34, R44 ;
+        /*1bf0*/                   HMMA.16816.F32 R64, R64, R26, R28 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 164
+        /*1c00*/               @P0 BRA `(.L_x_2) ;
+        /*1c10*/                   NOP ;
+        /*1c20*/                   NOP ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 186
+        /*1c30*/                   F2FP.F16.F32.PACK_AB R67, R67, R66 ;
+        /*1c40*/                   F2FP.F16.F32.PACK_AB R64, R65, R64 ;
+        /*1c50*/                   F2FP.F16.F32.PACK_AB R47, R47, R46 ;
+        /*1c60*/                   F2FP.F16.F32.PACK_AB R44, R45, R44 ;
+        /*1c70*/                   F2FP.F16.F32.PACK_AB R55, R55, R54 ;
+        /*1c80*/                   F2FP.F16.F32.PACK_AB R52, R53, R52 ;
+        /*1c90*/                   F2FP.F16.F32.PACK_AB R59, R59, R58 ;
+        /*1ca0*/                   F2FP.F16.F32.PACK_AB R56, R57, R56 ;
+        /*1cb0*/                   F2FP.F16.F32.PACK_AB R43, R43, R42 ;
+        /*1cc0*/                   F2FP.F16.F32.PACK_AB R40, R41, R40 ;
+        /*1cd0*/                   F2FP.F16.F32.PACK_AB R51, R51, R50 ;
+        /*1ce0*/                   F2FP.F16.F32.PACK_AB R48, R49, R48 ;
+        /*1cf0*/                   F2FP.F16.F32.PACK_AB R39, R39, R38 ;
+        /*1d00*/                   F2FP.F16.F32.PACK_AB R36, R37, R36 ;
+        /*1d10*/                   F2FP.F16.F32.PACK_AB R63, R63, R62 ;
+        /*1d20*/                   F2FP.F16.F32.PACK_AB R60, R61, R60 ;
+.L_x_1:
+        /*1d30*/                   S2R R0, SR_TID.X ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*1d40*/                   PRMT R58, R60, 0x7632, R63 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*1d50*/                   IMAD R9, R110, UR27, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*1d60*/                   PRMT R37, R52, 0x7632, R55 ;
+        /*1d70*/                   BAR.SYNC.DEFER_BLOCKING 0x0 ;
+        /*1d80*/                   PRMT R46, R48, 0x7632, R51 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*1d90*/                   IMAD R11, R109, UR27, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*1da0*/                   PRMT R41, R64, 0x7632, R67 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*1db0*/                   IMAD R13, R108, UR27, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 192
+        /*1dc0*/                   ISETP.GE.AND P0, PT, R84, UR12, PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*1dd0*/                   IMAD R15, R107, UR27, RZ ;
+        /*1de0*/                   ULDC.64 UR16, c[0x0][0x118] ;
+        /*1df0*/                   IMAD R17, R106, UR27, RZ ;
+        /*1e00*/                   ISETP.LT.AND P1, PT, R116.reuse, UR11, !P0 ;
+        /*1e10*/                   IMAD R116, R116, UR27, RZ ;
+        /*1e20*/                   ISETP.LT.AND P6, PT, R115.reuse, UR11, !P0 ;
+        /*1e30*/                   IMAD R115, R115, UR27, RZ ;
+        /*1e40*/                   ISETP.LT.AND P5, PT, R114.reuse, UR11, !P0 ;
+        /*1e50*/                   IMAD R114, R114, UR27, RZ ;
+        /*1e60*/                   LEA R68, P3, R116, UR24, 0x1 ;
+        /*1e70*/                   IMAD R19, R105, UR27, RZ ;
+        /*1e80*/                   LEA R70, P2, R115, UR24, 0x1 ;
+        /*1e90*/                   IMAD R21, R104, UR27, RZ ;
+        /*1ea0*/                   LEA R72, P4, R114, UR24, 0x1 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 109
+        /*1eb0*/                   IMAD.SHL.U32 R3, R0.reuse, 0x8, RZ ;
+        /*1ec0*/                   SHF.R.S32.HI R6, RZ, 0x8, R0 ;
+        /*1ed0*/                   IMAD.SHL.U32 R4, R0, 0x2, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*1ee0*/                   LEA.HI.X.SX32 R69, R116, UR25, 0x1, P3 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 109
+        /*1ef0*/                   IMAD.SHL.U32 R2, R0.reuse, 0x800, RZ ;
+        /*1f00*/                   LOP3.LUT R3, R3, 0xc0, RZ, 0xc0, !PT ;
+        /*1f10*/                   IMAD.SHL.U32 R5, R0.reuse, 0x10, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*1f20*/                   LEA.HI.X.SX32 R71, R115, UR25, 0x1, P2 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 109
+        /*1f30*/                   IMAD.SHL.U32 R7, R0.reuse, 0x40, RZ ;
+        /*1f40*/                   LOP3.LUT R3, R3, 0x348, R4, 0x78, !PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*1f50*/                   IMAD R23, R103, UR27, RZ ;
+        /*1f60*/                   LOP3.LUT R4, R0, 0xf, RZ, 0xc0, !PT ;
+        /*1f70*/                   IMAD R25, R102, UR27, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 109
+        /*1f80*/                   LOP3.LUT R2, R2, 0x6000, RZ, 0xc0, !PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*1f90*/                   IMAD R27, R101, UR27, RZ ;
+        /*1fa0*/                   LEA.HI.X.SX32 R73, R114, UR25, 0x1, P4 ;
+        /*1fb0*/                   IMAD.SHL.U32 R4, R4, 0x8, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 109
+        /*1fc0*/                   LOP3.LUT R2, R2, 0x430, R5, 0xf8, !PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*1fd0*/                   IMAD R29, R100, UR27, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 109
+        /*1fe0*/                   SHF.R.S32.HI R5, RZ, 0x7, R0 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*1ff0*/                   IMAD R31, R99, UR27, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 109
+        /*2000*/                   LOP3.LUT R7, R4, 0x1c00, R7, 0xf8, !PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*2010*/                   IMAD R33, R98, UR27, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 109
+        /*2020*/                   LOP3.LUT R4, R2, R3, RZ, 0xfc, !PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*2030*/                   IMAD R35, R97, UR27, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*2040*/                   PRMT R2, R60, 0x5410, R63 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*2050*/                   IMAD R45, R94, UR27, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*2060*/                   PRMT R3, R56, 0x5410, R59 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*2070*/                   IMAD R49, R92, UR27, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 109
+        /*2080*/                   SGXT R0, R6, 0x1 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*2090*/                   IMAD.WIDE R74, R84, 0x2, R68 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 109
+        /*20a0*/                   LOP3.LUT R6, R4, 0x8, RZ, 0x3c, !PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*20b0*/                   STS.64 [R4], R2 ;
+        /*20c0*/                   PRMT R59, R56, 0x7632, R59 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*20d0*/                   IMAD R56, R91, UR27, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 109
+        /*20e0*/                   SGXT R5, R5, 0x1 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*20f0*/                   IMAD.WIDE R76, R84, 0x2, R70 ;
+	//## File "/mnt/hdd/users/yxlin/python-envs/flashinfer-cu130/lib/python3.12/site-packages/triton/language/standard.py", line 43
+        /*2100*/                   USHF.R.S32.HI UR7, URZ, 0x1f, UR14 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 109
+        /*2110*/                   LOP3.LUT R5, R5, 0x2008, RZ, 0xc0, !PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*2120*/                   IMAD.WIDE R72, R84, 0x2, R72 ;
+	//## File "/mnt/hdd/users/yxlin/python-envs/flashinfer-cu130/lib/python3.12/site-packages/triton/language/standard.py", line 43
+        /*2130*/                   UIADD3 UR8, UR12, 0x7f, URZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 109
+        /*2140*/                   LOP3.LUT R0, R5, 0x4040, R0, 0xf8, !PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*2150*/                   IMAD R5, R112, UR27, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*2160*/                   PRMT R2, R36, 0x5410, R39 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*2170*/                   IMAD R53, R89, UR27, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*2180*/                   PRMT R3, R52, 0x5410, R55 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*2190*/                   IMAD R57, R88, UR27, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*21a0*/                   PRMT R36, R36, 0x7632, R39 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*21b0*/                   IMAD R39, R96, UR27, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 109
+        /*21c0*/                   LOP3.LUT R0, R0, R7, RZ, 0x3c, !PT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*21d0*/                   STS.64 [R4+0x800], R2 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*21e0*/                   IMAD R7, R111, UR27, RZ ;
+	//## File "/mnt/hdd/users/yxlin/python-envs/flashinfer-cu130/lib/python3.12/site-packages/triton/language/standard.py", line 43
+        /*21f0*/                   USHF.R.S32.HI UR9, URZ, 0x1f, UR13 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*2200*/                   IMAD R61, R86, UR27, RZ ;
+	//## File "/mnt/hdd/users/yxlin/python-envs/flashinfer-cu130/lib/python3.12/site-packages/triton/language/standard.py", line 43
+        /*2210*/                   UIADD3 UR15, UR11, 0x7f, URZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*2220*/                   IMAD R65, R85, UR27, RZ ;
+	//## File "/mnt/hdd/users/yxlin/python-envs/flashinfer-cu130/lib/python3.12/site-packages/triton/language/standard.py", line 43
+        /*2230*/                   ULEA.HI UR7, UR7, UR8, URZ, 0x7 ;
+        /*2240*/                   ULEA.HI UR9, UR9, UR15, URZ, 0x7 ;
+        /*2250*/                   USHF.R.S32.HI UR7, URZ, 0x7, UR7 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*2260*/                   PRMT R2, R48, 0x5410, R51 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*2270*/                   IMAD R51, R90, UR27, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*2280*/                   PRMT R3, R44.reuse, 0x5410, R47.reuse ;
+	//## File "/mnt/hdd/users/yxlin/python-envs/flashinfer-cu130/lib/python3.12/site-packages/triton/language/standard.py", line 43
+        /*2290*/                   USHF.R.S32.HI UR9, URZ, 0x7, UR9 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*22a0*/                   PRMT R47, R44, 0x7632, R47 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 198
+        /*22b0*/                   UIADD3 UR10, UR10, 0x80, URZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*22c0*/                   STS.64 [R4+0x1000], R2 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 134
+        /*22d0*/                   UIMAD UR7, UR7, UR9, UR4 ;
+        /*22e0*/                   UISETP.GE.AND UP1, UPT, UR10, UR4, UPT ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*22f0*/                   PRMT R2, R40, 0x5410, R43 ;
+        /*2300*/                   PRMT R3, R64, 0x5410, R67 ;
+        /*2310*/                   PRMT R40, R40, 0x7632, R43 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*2320*/                   IMAD R43, R95, UR27, RZ ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*2330*/                   STS.64 [R4+0x1800], R2 ;
+        /*2340*/                   STS.64 [R6], R58 ;
+        /*2350*/                   STS.64 [R6+0x800], R36 ;
+        /*2360*/                   STS.64 [R6+0x1000], R46 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*2370*/                   IMAD R3, R113, UR27, RZ ;
+        /*2380*/                   LEA R2, P2, R5, UR24, 0x1 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*2390*/                   STS.64 [R6+0x1800], R40 ;
+        /*23a0*/                   BAR.SYNC.DEFER_BLOCKING 0x0 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*23b0*/                   LEA R66, P3, R3, UR24, 0x1 ;
+        /*23c0*/                   IMAD R59, R87, UR27, RZ ;
+        /*23d0*/                   LEA R4, P4, R7, UR24, 0x1 ;
+        /*23e0*/                   IMAD R47, R93, UR27, RZ ;
+        /*23f0*/                   LEA.HI.X.SX32 R67, R3, UR25, 0x1, P3 ;
+        /*2400*/                   LEA.HI.X.SX32 R3, R5, UR25, 0x1, P2 ;
+        /*2410*/                   LEA R6, P3, R9, UR24, 0x1 ;
+        /*2420*/                   IMAD.WIDE R66, R84, 0x2, R66 ;
+        /*2430*/                   LEA R8, P2, R11, UR24, 0x1 ;
+        /*2440*/                   LEA.HI.X.SX32 R5, R7, UR25, 0x1, P4 ;
+        /*2450*/                   LEA R10, P4, R13, UR24, 0x1 ;
+        /*2460*/                   LEA.HI.X.SX32 R7, R9, UR25, 0x1, P3 ;
+        /*2470*/                   LEA R12, P3, R15, UR24, 0x1 ;
+        /*2480*/                   LEA.HI.X.SX32 R9, R11, UR25, 0x1, P2 ;
+        /*2490*/                   IMAD.WIDE R6, R84.reuse, 0x2, R6 ;
+        /*24a0*/                   LEA R14, P2, R17, UR24, 0x1 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*24b0*/                   LDS.64 R36, [R0] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*24c0*/                   LEA.HI.X.SX32 R11, R13, UR25, 0x1, P4 ;
+        /*24d0*/                   IMAD.WIDE R8, R84.reuse, 0x2, R8 ;
+        /*24e0*/                   LEA R16, P4, R19, UR24, 0x1 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*24f0*/                   LDS.64 R40, [R0+0x80] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*2500*/                   LEA.HI.X.SX32 R13, R15, UR25, 0x1, P3 ;
+        /*2510*/                   IMAD.WIDE R10, R84.reuse, 0x2, R10 ;
+        /*2520*/                   LEA R18, P3, R21, UR24, 0x1 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*2530*/                   LDS.64 R54, [R0+0x100] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*2540*/                   LEA.HI.X.SX32 R15, R17, UR25, 0x1, P2 ;
+        /*2550*/                   IMAD.WIDE R12, R84.reuse, 0x2, R12 ;
+        /*2560*/                   LEA R20, P2, R23, UR24, 0x1 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*2570*/                   LDS.64 R62, [R0+0x180] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*2580*/                   LEA.HI.X.SX32 R17, R19, UR25, 0x1, P4 ;
+        /*2590*/                   IMAD.WIDE R14, R84.reuse, 0x2, R14 ;
+        /*25a0*/                   LEA R22, P4, R25, UR24, 0x1 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*25b0*/                   LDS.64 R68, [R0+0x200] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*25c0*/                   LEA.HI.X.SX32 R19, R21, UR25, 0x1, P3 ;
+        /*25d0*/                   IMAD.WIDE R16, R84.reuse, 0x2, R16 ;
+        /*25e0*/                   LEA R24, P3, R27, UR24, 0x1 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*25f0*/                   LDS.64 R70, [R0+0x280] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*2600*/                   LEA.HI.X.SX32 R21, R23, UR25, 0x1, P2 ;
+        /*2610*/                   IMAD.WIDE R18, R84, 0x2, R18 ;
+        /*2620*/                   LEA R26, P2, R29, UR24, 0x1 ;
+        /*2630*/                   LEA.HI.X.SX32 R23, R25, UR25, 0x1, P4 ;
+        /*2640*/                   IMAD.WIDE R20, R84.reuse, 0x2, R20 ;
+        /*2650*/                   LEA R28, P4, R31, UR24, 0x1 ;
+        /*2660*/                   LEA.HI.X.SX32 R25, R27, UR25, 0x1, P3 ;
+        /*2670*/                   IMAD.WIDE R22, R84.reuse, 0x2, R22 ;
+        /*2680*/                   LEA R30, P3, R33, UR24, 0x1 ;
+        /*2690*/                   LEA.HI.X.SX32 R27, R29, UR25, 0x1, P2 ;
+        /*26a0*/                   IMAD.WIDE R24, R84, 0x2, R24 ;
+        /*26b0*/                   LEA R32, P2, R35, UR24, 0x1 ;
+        /*26c0*/                   LEA.HI.X.SX32 R29, R31, UR25, 0x1, P4 ;
+        /*26d0*/                   IMAD.WIDE R26, R84.reuse, 0x2, R26 ;
+        /*26e0*/                   LEA R34, P4, R39, UR24, 0x1 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*26f0*/               @P1 STG.E.U16 [R74.64], R36 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*2700*/                   LEA.HI.X.SX32 R31, R33, UR25, 0x1, P3 ;
+        /*2710*/                   IMAD.WIDE R28, R84.reuse, 0x2, R28 ;
+        /*2720*/                   LEA R38, P3, R43, UR24, 0x1 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*2730*/               @P6 STG.E.U16 [R76.64], R40 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*2740*/                   LEA.HI.X.SX32 R33, R35, UR25, 0x1, P2 ;
+        /*2750*/                   IMAD.WIDE R30, R84, 0x2, R30 ;
+        /*2760*/                   LEA R42, P2, R45, UR24, 0x1 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*2770*/                   PRMT R79, R36, 0x7632, R79 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*2780*/                   IMAD.WIDE R32, R84.reuse, 0x2, R32 ;
+        /*2790*/                   LEA.HI.X.SX32 R35, R39, UR25, 0x1, P4 ;
+        /*27a0*/                   LEA R44, P4, R47, UR24, 0x1 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*27b0*/               @P5 STG.E.U16 [R72.64], R79 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*27c0*/                   LEA.HI.X.SX32 R39, R43, UR25, 0x1, P3 ;
+        /*27d0*/                   IMAD.WIDE R74, R84.reuse, 0x2, R4 ;
+        /*27e0*/                   LEA R46, P3, R49, UR24, 0x1 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*27f0*/                   LDS.64 R4, [R0+0x380] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*2800*/                   LEA.HI.X.SX32 R43, R45, UR25, 0x1, P2 ;
+        /*2810*/                   IMAD.WIDE R34, R84, 0x2, R34 ;
+        /*2820*/                   LEA R48, P2, R56, UR24, 0x1 ;
+        /*2830*/                   LEA.HI.X.SX32 R45, R47, UR25, 0x1, P4 ;
+        /*2840*/                   IMAD.WIDE R38, R84.reuse, 0x2, R38 ;
+        /*2850*/                   LEA R50, P4, R51, UR24, 0x1 ;
+        /*2860*/                   LEA.HI.X.SX32 R47, R49, UR25, 0x1, P3 ;
+        /*2870*/                   IMAD.WIDE R78, R84, 0x2, R2 ;
+        /*2880*/                   LEA R52, P3, R53, UR24, 0x1 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*2890*/                   LDS.64 R2, [R0+0x300] ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*28a0*/                   LEA.HI.X.SX32 R49, R56, UR25, 0x1, P2 ;
+        /*28b0*/                   IMAD.WIDE R42, R84, 0x2, R42 ;
+        /*28c0*/                   LEA R56, P2, R57, UR24, 0x1 ;
+        /*28d0*/                   LEA.HI.X.SX32 R51, R51, UR25, 0x1, P4 ;
+        /*28e0*/                   IMAD.WIDE R44, R84.reuse, 0x2, R44 ;
+        /*28f0*/                   LEA R58, P4, R59, UR24, 0x1 ;
+        /*2900*/                   LEA.HI.X.SX32 R53, R53, UR25, 0x1, P3 ;
+        /*2910*/                   IMAD.WIDE R46, R84.reuse, 0x2, R46 ;
+        /*2920*/                   LEA R60, P3, R61, UR24, 0x1 ;
+        /*2930*/                   LEA.HI.X.SX32 R57, R57, UR25, 0x1, P2 ;
+        /*2940*/                   IMAD.WIDE R48, R84, 0x2, R48 ;
+        /*2950*/                   LEA R64, P2, R65, UR24, 0x1 ;
+        /*2960*/                   LEA.HI.X.SX32 R59, R59, UR25, 0x1, P4 ;
+        /*2970*/                   IMAD.WIDE R50, R84.reuse, 0x2, R50 ;
+        /*2980*/                   ISETP.LT.AND P4, PT, R113, UR11, !P0 ;
+        /*2990*/                   LEA.HI.X.SX32 R61, R61, UR25, 0x1, P3 ;
+        /*29a0*/                   IMAD.WIDE R52, R84, 0x2, R52 ;
+        /*29b0*/                   ISETP.LT.AND P3, PT, R112, UR11, !P0 ;
+        /*29c0*/                   LEA.HI.X.SX32 R65, R65, UR25, 0x1, P2 ;
+        /*29d0*/                   IMAD.WIDE R56, R84, 0x2, R56 ;
+        /*29e0*/                   ISETP.LT.AND P2, PT, R111, UR11, !P0 ;
+        /*29f0*/                   ISETP.LT.AND P1, PT, R110, UR11, !P0 ;
+        /*2a00*/                   IMAD.WIDE R58, R84, 0x2, R58 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*2a10*/                   PRMT R73, R40, 0x7632, R73 ;
+        /*2a20*/                   PRMT R36, R54, 0x7632, R36 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*2a30*/                   IMAD.WIDE R60, R84, 0x2, R60 ;
+        /*2a40*/                   ISETP.LT.AND P6, PT, R109, UR11, !P0 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*2a50*/               @P4 STG.E.U16 [R66.64], R73 ;
+        /*2a60*/                   ISETP.LT.AND P5, PT, R108, UR11, !P0 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 190
+        /*2a70*/                   IMAD.WIDE R64, R84, 0x2, R64 ;
+        /*2a80*/                   ISETP.LT.AND P4, PT, R107, UR11, !P0 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 195
+        /*2a90*/               @P3 STG.E.U16 [R78.64], R54 ;
+        /*2aa0*/                   ISETP.LT.AND P3, PT, R106, UR11, !P0 ;
+        /*2ab0*/                   PRMT R0, R68, 0x7632, R0 ;
+        /*2ac0*/               @P2 STG.E.U16 [R74.64], R62 ;
+        /*2ad0*/                   ISETP.LT.AND P2, PT, R105, UR11, !P0 ;
+        /*2ae0*/               @P1 STG.E.U16 [R6.64], R36 ;
+        /*2af0*/                   ISETP.LT.AND P1, PT, R104, UR11, !P0 ;
+        /*2b00*/                   PRMT R7, R62, 0x7632, R7 ;
+        /*2b10*/                   PRMT R6, R70, 0x7632, R6 ;
+        /*2b20*/               @P6 STG.E.U16 [R8.64], R7 ;
+        /*2b30*/                   ISETP.LT.AND P6, PT, R103, UR11, !P0 ;
+        /*2b40*/               @P5 STG.E.U16 [R10.64], R68 ;
+        /*2b50*/                   ISETP.LT.AND P5, PT, R102, UR11, !P0 ;
+        /*2b60*/               @P4 STG.E.U16 [R12.64], R70 ;
+        /*2b70*/                   ISETP.LT.AND P4, PT, R101, UR11, !P0 ;
+        /*2b80*/               @P3 STG.E.U16 [R14.64], R0 ;
+        /*2b90*/                   ISETP.LT.AND P3, PT, R100, UR11, !P0 ;
+        /*2ba0*/               @P2 STG.E.U16 [R16.64], R6 ;
+        /*2bb0*/                   ISETP.LT.AND P2, PT, R99, UR11, !P0 ;
+        /*2bc0*/                   PRMT R11, R2, 0x7632, R11 ;
+        /*2bd0*/               @P1 STG.E.U16 [R18.64], R2 ;
+        /*2be0*/                   ISETP.LT.AND P1, PT, R98, UR11, !P0 ;
+        /*2bf0*/                   PRMT R12, R4, 0x7632, R12 ;
+        /*2c00*/               @P6 STG.E.U16 [R20.64], R4 ;
+        /*2c10*/                   PRMT R15, R37, 0x7632, R15 ;
+        /*2c20*/                   IMAD.U32 R0, RZ, RZ, UR7 ;
+        /*2c30*/                   ISETP.LT.AND P6, PT, R97, UR11, !P0 ;
+        /*2c40*/               @P5 STG.E.U16 [R22.64], R11 ;
+        /*2c50*/                   ISETP.LT.AND P5, PT, R96, UR11, !P0 ;
+        /*2c60*/                   PRMT R16, R41, 0x7632, R16 ;
+        /*2c70*/               @P4 STG.E.U16 [R24.64], R12 ;
+        /*2c80*/                   ISETP.LT.AND P4, PT, R95, UR11, !P0 ;
+        /*2c90*/               @P3 STG.E.U16 [R26.64], R37 ;
+        /*2ca0*/                   ISETP.LT.AND P3, PT, R94, UR11, !P0 ;
+        /*2cb0*/                   PRMT R21, R55, 0x7632, R21 ;
+        /*2cc0*/               @P2 STG.E.U16 [R28.64], R41 ;
+        /*2cd0*/                   ISETP.LT.AND P2, PT, R93, UR11, !P0 ;
+        /*2ce0*/                   PRMT R22, R63, 0x7632, R22 ;
+        /*2cf0*/               @P1 STG.E.U16 [R30.64], R15 ;
+        /*2d00*/                   ISETP.LT.AND P1, PT, R92, UR11, !P0 ;
+        /*2d10*/                   PRMT R25, R69, 0x7632, R25 ;
+        /*2d20*/               @P6 STG.E.U16 [R32.64], R16 ;
+        /*2d30*/                   ISETP.LT.AND P6, PT, R91, UR11, !P0 ;
+        /*2d40*/                   PRMT R26, R71, 0x7632, R26 ;
+        /*2d50*/               @P5 STG.E.U16 [R34.64], R55 ;
+        /*2d60*/                   ISETP.LT.AND P5, PT, R90, UR11, !P0 ;
+        /*2d70*/               @P4 STG.E.U16 [R38.64], R63 ;
+        /*2d80*/                   ISETP.LT.AND P4, PT, R89, UR11, !P0 ;
+        /*2d90*/                   PRMT R30, R3, 0x7632, R30 ;
+        /*2da0*/               @P3 STG.E.U16 [R42.64], R21 ;
+        /*2db0*/                   ISETP.LT.AND P3, PT, R88, UR11, !P0 ;
+        /*2dc0*/                   PRMT R32, R5, 0x7632, R32 ;
+        /*2dd0*/               @P2 STG.E.U16 [R44.64], R22 ;
+        /*2de0*/                   ISETP.LT.AND P2, PT, R87, UR11, !P0 ;
+        /*2df0*/               @P1 STG.E.U16 [R46.64], R69 ;
+        /*2e00*/                   ISETP.LT.AND P1, PT, R86, UR11, !P0 ;
+        /*2e10*/                   ISETP.LT.AND P0, PT, R85, UR11, !P0 ;
+        /*2e20*/               @P6 STG.E.U16 [R48.64], R71 ;
+        /*2e30*/               @P5 STG.E.U16 [R50.64], R25 ;
+        /*2e40*/               @P4 STG.E.U16 [R52.64], R26 ;
+        /*2e50*/               @P3 STG.E.U16 [R56.64], R3 ;
+        /*2e60*/               @P2 STG.E.U16 [R58.64], R5 ;
+        /*2e70*/               @P1 STG.E.U16 [R60.64], R30 ;
+        /*2e80*/                   ISETP.GT.AND P1, PT, R0, UR10, PT ;
+        /*2e90*/               @P0 STG.E.U16 [R64.64], R32 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 134
+        /*2ea0*/                   PLOP3.LUT P0, PT, PT, PT, UP1, 0x80, 0x0 ;
+        /*2eb0*/               @P0 BRA P1, `(.L_x_3) ;
+.L_x_0:
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 119
+        /*2ec0*/                   UIADD3 UR5, UP0, UR5, 0x1, URZ ;
+        /*2ed0*/                   ULDC UR7, c[0x0][0x188] ;
+        /*2ee0*/                   UIADD3.X UR6, URZ, UR6, URZ, UP0, !UPT ;
+        /*2ef0*/                   UISETP.NE.U32.AND UP0, UPT, UR5, UR7, UPT ;
+        /*2f00*/                   UISETP.NE.U32.AND.EX UP0, UPT, UR6, URZ, UPT, UP0 ;
+        /*2f10*/                   PLOP3.LUT P0, PT, PT, PT, UP0, 0x80, 0x0 ;
+        /*2f20*/              @!P0 EXIT ;
+	//## File "/mnt/hdd/users/yxlin/python-envs/flashinfer-cu130/lib/python3.12/site-packages/triton/language/standard.py", line 43
+        /*2f30*/                   USHF.R.S32.HI UR14, URZ, 0x1f, UR14 ;
+        /*2f40*/                   UIADD3 UR12, UR12, 0x7f, URZ ;
+        /*2f50*/                   USHF.R.S32.HI UR13, URZ, 0x1f, UR13 ;
+        /*2f60*/                   UIADD3 UR11, UR11, 0x7f, URZ ;
+        /*2f70*/                   ULEA.HI UR12, UR14, UR12, URZ, 0x7 ;
+        /*2f80*/                   ULEA.HI UR11, UR13, UR11, URZ, 0x7 ;
+        /*2f90*/                   USHF.R.S32.HI UR12, URZ, 0x7, UR12 ;
+        /*2fa0*/                   USHF.R.S32.HI UR11, URZ, 0x7, UR11 ;
+	//## File "/mnt/hdd/users/yxlin/github/Study-for-CUDA/GroupGEMM/Triton_GroupGEMM/optimized/grouped_gemm.py", line 134
+        /*2fb0*/                   UIMAD UR4, UR12, UR11, UR4 ;
+        /*2fc0*/                   BRA `(.L_x_4) ;
+.L_x_5:
+        /*2fd0*/                   BRA `(.L_x_5);
+        /*2fe0*/                   NOP;
+        /*2ff0*/                   NOP;
+        /*3000*/                   NOP;
+        /*3010*/                   NOP;
+        /*3020*/                   NOP;
+        /*3030*/                   NOP;
+        /*3040*/                   NOP;
+        /*3050*/                   NOP;
+        /*3060*/                   NOP;
+        /*3070*/                   NOP;
+.L_x_6:

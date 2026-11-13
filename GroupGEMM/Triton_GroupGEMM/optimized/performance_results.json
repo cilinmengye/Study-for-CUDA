@@ -1,0 +1,830 @@
+{
+  "device": "NVIDIA GeForce RTX 4090",
+  "triton_version": "3.7.0",
+  "dtype": "float16",
+  "timing_scope": "原有 do_bench 时间口径；不含首次编译/调优和输入准备；两版各运行一次完整 main.py。",
+  "comparison": [
+    {
+      "case": "square",
+      "size": 128,
+      "before": {
+        "cublas_ms": 0.013248,
+        "triton_ms": 0.01024
+      },
+      "after": {
+        "cublas_ms": 0.013184,
+        "triton_ms": 0.008192
+      },
+      "speedup": 1.2500000000000002
+    },
+    {
+      "case": "square",
+      "size": 256,
+      "before": {
+        "cublas_ms": 0.01872,
+        "triton_ms": 0.016384
+      },
+      "after": {
+        "cublas_ms": 0.019328,
+        "triton_ms": 0.013312
+      },
+      "speedup": 1.2307692307692308
+    },
+    {
+      "case": "square",
+      "size": 512,
+      "before": {
+        "cublas_ms": 0.031744,
+        "triton_ms": 0.029696
+      },
+      "after": {
+        "cublas_ms": 0.032768,
+        "triton_ms": 0.024576
+      },
+      "speedup": 1.2083333333333333
+    },
+    {
+      "case": "square",
+      "size": 1024,
+      "before": {
+        "cublas_ms": 0.093184,
+        "triton_ms": 0.162816
+      },
+      "after": {
+        "cublas_ms": 0.09216,
+        "triton_ms": 0.100352
+      },
+      "speedup": 1.6224489795918366
+    },
+    {
+      "case": "fixed_nk_8192",
+      "size": 31,
+      "before": {
+        "cublas_ms": 0.661504,
+        "triton_ms": 0.663552
+      },
+      "after": {
+        "cublas_ms": 0.66104,
+        "triton_ms": 0.626688
+      },
+      "speedup": 1.0588235294117647
+    },
+    {
+      "case": "fixed_nk_8192",
+      "size": 32,
+      "before": {
+        "cublas_ms": 0.661504,
+        "triton_ms": 0.663152
+      },
+      "after": {
+        "cublas_ms": 0.660704,
+        "triton_ms": 0.627616
+      },
+      "speedup": 1.0566206087798908
+    },
+    {
+      "case": "fixed_nk_8192",
+      "size": 63,
+      "before": {
+        "cublas_ms": 0.656704,
+        "triton_ms": 0.668672
+      },
+      "after": {
+        "cublas_ms": 0.656384,
+        "triton_ms": 0.632832
+      },
+      "speedup": 1.0566343042071198
+    },
+    {
+      "case": "fixed_nk_8192",
+      "size": 64,
+      "before": {
+        "cublas_ms": 0.656384,
+        "triton_ms": 0.668672
+      },
+      "after": {
+        "cublas_ms": 0.656224,
+        "triton_ms": 0.632832
+      },
+      "speedup": 1.0566343042071198
+    },
+    {
+      "case": "fixed_nk_8192",
+      "size": 127,
+      "before": {
+        "cublas_ms": 0.663552,
+        "triton_ms": 1.173504
+      },
+      "after": {
+        "cublas_ms": 0.663552,
+        "triton_ms": 0.750592
+      },
+      "speedup": 1.56343792633015
+    },
+    {
+      "case": "fixed_nk_8192",
+      "size": 128,
+      "before": {
+        "cublas_ms": 0.663552,
+        "triton_ms": 1.17248
+      },
+      "after": {
+        "cublas_ms": 0.663504,
+        "triton_ms": 0.723968
+      },
+      "speedup": 1.6195190947666196
+    },
+    {
+      "case": "fixed_nk_8192",
+      "size": 255,
+      "before": {
+        "cublas_ms": 0.925296,
+        "triton_ms": 2.321408
+      },
+      "after": {
+        "cublas_ms": 0.93832,
+        "triton_ms": 1.337248
+      },
+      "speedup": 1.7359592237191606
+    },
+    {
+      "case": "fixed_nk_8192",
+      "size": 256,
+      "before": {
+        "cublas_ms": 0.929792,
+        "triton_ms": 2.323456
+      },
+      "after": {
+        "cublas_ms": 0.944128,
+        "triton_ms": 1.33632
+      },
+      "speedup": 1.738697318007663
+    },
+    {
+      "case": "fixed_nk_8192",
+      "size": 511,
+      "before": {
+        "cublas_ms": 1.634304,
+        "triton_ms": 4.631552
+      },
+      "after": {
+        "cublas_ms": 1.651712,
+        "triton_ms": 2.59584
+      },
+      "speedup": 1.7842209072978306
+    },
+    {
+      "case": "fixed_nk_8192",
+      "size": 512,
+      "before": {
+        "cublas_ms": 1.652736,
+        "triton_ms": 4.625408
+      },
+      "after": {
+        "cublas_ms": 1.672192,
+        "triton_ms": 2.59584
+      },
+      "speedup": 1.781854043392505
+    },
+    {
+      "case": "fixed_nk_8192",
+      "size": 1023,
+      "before": {
+        "cublas_ms": 3.33568,
+        "triton_ms": 9.253984
+      },
+      "after": {
+        "cublas_ms": 3.42056,
+        "triton_ms": 5.172736
+      },
+      "speedup": 1.7889921310501835
+    },
+    {
+      "case": "fixed_nk_8192",
+      "size": 1024,
+      "before": {
+        "cublas_ms": 3.382272,
+        "triton_ms": 9.265664
+      },
+      "after": {
+        "cublas_ms": 3.398656,
+        "triton_ms": 5.172224
+      },
+      "speedup": 1.791427440110869
+    }
+  ],
+  "selected_configs": [
+    {
+      "sizes": [
+        1024,
+        1024,
+        1024,
+        512,
+        512,
+        512,
+        256,
+        256,
+        256,
+        128,
+        128,
+        128
+      ],
+      "strides": [
+        1024,
+        1024,
+        1024,
+        512,
+        512,
+        512,
+        256,
+        256,
+        256,
+        128,
+        128,
+        128
+      ],
+      "config": "BLOCK_SIZE_M: 128, BLOCK_SIZE_N: 128, BLOCK_SIZE_K: 64, NUM_SM: 128, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None"
+    },
+    {
+      "sizes": [
+        31,
+        63,
+        65,
+        65,
+        127,
+        129,
+        127,
+        255,
+        257,
+        1,
+        17,
+        33
+      ],
+      "strides": [
+        65,
+        63,
+        63,
+        129,
+        127,
+        127,
+        257,
+        255,
+        255,
+        33,
+        17,
+        17
+      ],
+      "config": "BLOCK_SIZE_M: 64, BLOCK_SIZE_N: 64, BLOCK_SIZE_K: 32, NUM_SM: 128, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None"
+    },
+    {
+      "sizes": [
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128
+      ],
+      "strides": [
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128,
+        128
+      ],
+      "config": "BLOCK_SIZE_M: 32, BLOCK_SIZE_N: 128, BLOCK_SIZE_K: 32, NUM_SM: 128, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None"
+    },
+    {
+      "sizes": [
+        256,
+        256,
+        256,
+        256,
+        256,
+        256,
+        256,
+        256,
+        256,
+        256,
+        256,
+        256
+      ],
+      "strides": [
+        256,
+        256,
+        256,
+        256,
+        256,
+        256,
+        256,
+        256,
+        256,
+        256,
+        256,
+        256
+      ],
+      "config": "BLOCK_SIZE_M: 32, BLOCK_SIZE_N: 128, BLOCK_SIZE_K: 32, NUM_SM: 128, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None"
+    },
+    {
+      "sizes": [
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512
+      ],
+      "strides": [
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512
+      ],
+      "config": "BLOCK_SIZE_M: 64, BLOCK_SIZE_N: 128, BLOCK_SIZE_K: 64, NUM_SM: 128, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None"
+    },
+    {
+      "sizes": [
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024
+      ],
+      "strides": [
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024
+      ],
+      "config": "BLOCK_SIZE_M: 128, BLOCK_SIZE_N: 128, BLOCK_SIZE_K: 64, NUM_SM: 128, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None"
+    },
+    {
+      "sizes": [
+        31,
+        8192,
+        8192,
+        31,
+        8192,
+        8192,
+        31,
+        8192,
+        8192,
+        31,
+        8192,
+        8192
+      ],
+      "strides": [
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192
+      ],
+      "config": "BLOCK_SIZE_M: 32, BLOCK_SIZE_N: 256, BLOCK_SIZE_K: 64, NUM_SM: 128, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None"
+    },
+    {
+      "sizes": [
+        32,
+        8192,
+        8192,
+        32,
+        8192,
+        8192,
+        32,
+        8192,
+        8192,
+        32,
+        8192,
+        8192
+      ],
+      "strides": [
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192
+      ],
+      "config": "BLOCK_SIZE_M: 32, BLOCK_SIZE_N: 256, BLOCK_SIZE_K: 64, NUM_SM: 128, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None"
+    },
+    {
+      "sizes": [
+        63,
+        8192,
+        8192,
+        63,
+        8192,
+        8192,
+        63,
+        8192,
+        8192,
+        63,
+        8192,
+        8192
+      ],
+      "strides": [
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192
+      ],
+      "config": "BLOCK_SIZE_M: 64, BLOCK_SIZE_N: 128, BLOCK_SIZE_K: 64, NUM_SM: 128, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None"
+    },
+    {
+      "sizes": [
+        64,
+        8192,
+        8192,
+        64,
+        8192,
+        8192,
+        64,
+        8192,
+        8192,
+        64,
+        8192,
+        8192
+      ],
+      "strides": [
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192
+      ],
+      "config": "BLOCK_SIZE_M: 64, BLOCK_SIZE_N: 128, BLOCK_SIZE_K: 64, NUM_SM: 128, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None"
+    },
+    {
+      "sizes": [
+        127,
+        8192,
+        8192,
+        127,
+        8192,
+        8192,
+        127,
+        8192,
+        8192,
+        127,
+        8192,
+        8192
+      ],
+      "strides": [
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192
+      ],
+      "config": "BLOCK_SIZE_M: 128, BLOCK_SIZE_N: 128, BLOCK_SIZE_K: 64, NUM_SM: 128, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None"
+    },
+    {
+      "sizes": [
+        128,
+        8192,
+        8192,
+        128,
+        8192,
+        8192,
+        128,
+        8192,
+        8192,
+        128,
+        8192,
+        8192
+      ],
+      "strides": [
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192
+      ],
+      "config": "BLOCK_SIZE_M: 128, BLOCK_SIZE_N: 128, BLOCK_SIZE_K: 64, NUM_SM: 128, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None"
+    },
+    {
+      "sizes": [
+        255,
+        8192,
+        8192,
+        255,
+        8192,
+        8192,
+        255,
+        8192,
+        8192,
+        255,
+        8192,
+        8192
+      ],
+      "strides": [
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192
+      ],
+      "config": "BLOCK_SIZE_M: 128, BLOCK_SIZE_N: 128, BLOCK_SIZE_K: 64, NUM_SM: 128, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None"
+    },
+    {
+      "sizes": [
+        256,
+        8192,
+        8192,
+        256,
+        8192,
+        8192,
+        256,
+        8192,
+        8192,
+        256,
+        8192,
+        8192
+      ],
+      "strides": [
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192
+      ],
+      "config": "BLOCK_SIZE_M: 128, BLOCK_SIZE_N: 128, BLOCK_SIZE_K: 64, NUM_SM: 128, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None"
+    },
+    {
+      "sizes": [
+        511,
+        8192,
+        8192,
+        511,
+        8192,
+        8192,
+        511,
+        8192,
+        8192,
+        511,
+        8192,
+        8192
+      ],
+      "strides": [
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192
+      ],
+      "config": "BLOCK_SIZE_M: 256, BLOCK_SIZE_N: 128, BLOCK_SIZE_K: 32, NUM_SM: 128, num_warps: 16, num_ctas: 1, num_stages: 2, maxnreg: None"
+    },
+    {
+      "sizes": [
+        512,
+        8192,
+        8192,
+        512,
+        8192,
+        8192,
+        512,
+        8192,
+        8192,
+        512,
+        8192,
+        8192
+      ],
+      "strides": [
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192
+      ],
+      "config": "BLOCK_SIZE_M: 256, BLOCK_SIZE_N: 128, BLOCK_SIZE_K: 32, NUM_SM: 128, num_warps: 16, num_ctas: 1, num_stages: 2, maxnreg: None"
+    },
+    {
+      "sizes": [
+        1023,
+        8192,
+        8192,
+        1023,
+        8192,
+        8192,
+        1023,
+        8192,
+        8192,
+        1023,
+        8192,
+        8192
+      ],
+      "strides": [
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192
+      ],
+      "config": "BLOCK_SIZE_M: 256, BLOCK_SIZE_N: 128, BLOCK_SIZE_K: 32, NUM_SM: 128, num_warps: 16, num_ctas: 1, num_stages: 2, maxnreg: None"
+    },
+    {
+      "sizes": [
+        1024,
+        8192,
+        8192,
+        1024,
+        8192,
+        8192,
+        1024,
+        8192,
+        8192,
+        1024,
+        8192,
+        8192
+      ],
+      "strides": [
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192,
+        8192
+      ],
+      "config": "BLOCK_SIZE_M: 256, BLOCK_SIZE_N: 128, BLOCK_SIZE_K: 32, NUM_SM: 128, num_warps: 16, num_ctas: 1, num_stages: 2, maxnreg: None"
+    }
+  ],
+  "config_resources": [
+    {
+      "config": "BLOCK_SIZE_M: 64, BLOCK_SIZE_N: 64, BLOCK_SIZE_K: 32, NUM_SM: 128, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None",
+      "registers": 150,
+      "local_bytes": 0,
+      "shared_bytes": 8192
+    },
+    {
+      "config": "BLOCK_SIZE_M: 32, BLOCK_SIZE_N: 128, BLOCK_SIZE_K: 32, NUM_SM: 128, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None",
+      "registers": 165,
+      "local_bytes": 0,
+      "shared_bytes": 10240
+    },
+    {
+      "config": "BLOCK_SIZE_M: 32, BLOCK_SIZE_N: 256, BLOCK_SIZE_K: 64, NUM_SM: 128, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None",
+      "registers": 235,
+      "local_bytes": 0,
+      "shared_bytes": 36864
+    },
+    {
+      "config": "BLOCK_SIZE_M: 64, BLOCK_SIZE_N: 128, BLOCK_SIZE_K: 64, NUM_SM: 128, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None",
+      "registers": 198,
+      "local_bytes": 0,
+      "shared_bytes": 24576
+    },
+    {
+      "config": "BLOCK_SIZE_M: 128, BLOCK_SIZE_N: 128, BLOCK_SIZE_K: 64, NUM_SM: 128, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None",
+      "registers": 233,
+      "local_bytes": 0,
+      "shared_bytes": 32768
+    },
+    {
+      "config": "BLOCK_SIZE_M: 256, BLOCK_SIZE_N: 128, BLOCK_SIZE_K: 32, NUM_SM: 128, num_warps: 16, num_ctas: 1, num_stages: 2, maxnreg: None",
+      "registers": 128,
+      "local_bytes": 568,
+      "shared_bytes": 65536
+    }
+  ],
+  "resource_note": "local_bytes 是当前 Triton 后端 n_spills * 4，不是动态溢出次数。",
+  "validation": {
+    "original_gemms": 4,
+    "tail_gemms": 4,
+    "configs_memchecked": 6,
+    "memcheck_errors": 0,
+    "tma_executed": false
+  },
+  "original_sha256": {
+    "test_correctness.py": "7eadcfeb0760049ae1b8b6b8a3b57da6fb07a102c0512d7a722fc76885133fbf",
+    "benchmarks.py": "c70c7198339544a589348cd6c69fd30c461caa66be602375e11f838cd98dc3ed",
+    "grouped_gemm.py": "15572877f34dfb6ec2efcca758c0863a9be4442e6360892b1e05477e0e5dc3eb",
+    "grouped_gemm_tma.py": "b95ebee6f864ca851cc6ef6f1076ee6dfaa71bbbe7c768a6ed27efcdc5a92895",
+    "common.py": "065e5c742a85d7a7888f876ab277876f793050d65a0b31aac16b8c96e56d9b25",
+    "main.py": "ac0adacc8f044cc9aa35c1686bdd1854549b3aabfd4906f56899a0ce415d3872"
+  }
+}

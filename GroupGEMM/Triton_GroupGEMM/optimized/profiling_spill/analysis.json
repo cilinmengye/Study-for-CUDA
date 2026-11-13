@@ -1,0 +1,265 @@
+{
+  "measured": {
+    "A": {
+      "resource": {
+        "spec": [
+          128,
+          128,
+          64,
+          8
+        ],
+        "registers": 233,
+        "local_bytes": 0,
+        "shared_bytes": 32768
+      },
+      "median_ms": 5.290672063827515,
+      "min_round_median_ms": 5.272575855255127,
+      "max_round_median_ms": 5.304319858551025,
+      "sass": {
+        "k_loop_start": "0x10d0",
+        "k_loop_end": "0x2990",
+        "k_loop_sass_line": 543,
+        "k_loop_static_instructions": 395,
+        "k_loop_opcode_counts": {
+          "LEA": 1,
+          "IMAD.WIDE": 12,
+          "PRMT": 96,
+          "ISETP.GE.AND": 18,
+          "IADD3": 19,
+          "ISETP.LT.AND": 64,
+          "LDG.E.U16": 64,
+          "LOP3.LUT": 13,
+          "IMAD.SHL.U32": 4,
+          "SHF.R.U32.HI": 1,
+          "STS.128": 8,
+          "IMAD": 1,
+          "LDSM.16.MT88.4": 8,
+          "LDSM.16.M88.4": 16,
+          "HMMA.16816.F32": 64,
+          "UIADD3": 2,
+          "IMAD.X": 1,
+          "ISETP.NE.U32.AND": 1,
+          "CALL.REL.NOINC": 1,
+          "BRA": 1
+        },
+        "total_output_tiles": 2048,
+        "k_iterations_per_tile": 128,
+        "local_opcodes": {},
+        "local_ops_inside_k": 0,
+        "local_ops_outside_k": 0,
+        "logical_input_read_bytes": 8589934592,
+        "k_loop_warp_instruction_instances_estimate": 828375040,
+        "source_A_read_bytes": 4294967296,
+        "source_B_read_bytes": 4294967296
+      }
+    },
+    "B": {
+      "resource": {
+        "spec": [
+          256,
+          128,
+          32,
+          16
+        ],
+        "registers": 128,
+        "local_bytes": 568,
+        "shared_bytes": 65536
+      },
+      "median_ms": 5.163008213043213,
+      "min_round_median_ms": 5.1563520431518555,
+      "max_round_median_ms": 5.165056228637695,
+      "sass": {
+        "k_loop_start": "0x1650",
+        "k_loop_end": "0x2150",
+        "k_loop_sass_line": 719,
+        "k_loop_static_instructions": 175,
+        "k_loop_opcode_counts": {
+          "S2R": 2,
+          "PRMT": 36,
+          "LOP3.LUT": 3,
+          "LEA": 1,
+          "IADD3": 9,
+          "ISETP.GE.AND": 10,
+          "ISETP.LT.AND": 24,
+          "IMAD.WIDE": 3,
+          "LDG.E.U16": 24,
+          "P2R": 2,
+          "ISETP.NE.AND": 2,
+          "SHF.R.U32.HI": 1,
+          "SGXT.U32": 1,
+          "IMAD.MOV.U32": 4,
+          "STS.128": 3,
+          "LDSM.16.M88.4": 8,
+          "LDSM.16.MT88.4": 4,
+          "HMMA.16816.F32": 32,
+          "UIADD3": 2,
+          "ISETP.NE.U32.AND": 1,
+          "IMAD.U32": 1,
+          "IMAD.X": 1,
+          "BRA": 1
+        },
+        "total_output_tiles": 1024,
+        "k_iterations_per_tile": 256,
+        "local_opcodes": {
+          "STL": 67,
+          "LDL": 59,
+          "LDL.LU": 67,
+          "STL.64": 42,
+          "LDL.LU.64": 42
+        },
+        "local_ops_inside_k": 0,
+        "local_ops_outside_k": 277,
+        "logical_input_read_bytes": 6442450944,
+        "k_loop_warp_instruction_instances_estimate": 734003200,
+        "source_A_read_bytes": 4294967296,
+        "source_B_read_bytes": 2147483648,
+        "local_bytes_per_tile_thread_estimate": 1444,
+        "logical_local_read_write_bytes_estimate": 757071872
+      }
+    },
+    "C": {
+      "resource": {
+        "spec": [
+          128,
+          128,
+          64,
+          16
+        ],
+        "registers": 128,
+        "local_bytes": 0,
+        "shared_bytes": 32768
+      },
+      "median_ms": 5.374927997589111,
+      "min_round_median_ms": 5.361663818359375,
+      "max_round_median_ms": 5.375999927520752,
+      "sass": {
+        "k_loop_start": "0xdc0",
+        "k_loop_end": "0x1c00",
+        "k_loop_sass_line": 445,
+        "k_loop_static_instructions": 227,
+        "k_loop_opcode_counts": {
+          "LEA": 1,
+          "PRMT": 48,
+          "IADD3": 17,
+          "ISETP.GE.AND": 11,
+          "ISETP.LT.AND": 32,
+          "IMAD.WIDE": 6,
+          "LDG.E.U16": 32,
+          "P2R": 2,
+          "ISETP.NE.AND": 2,
+          "IMAD.SHL.U32": 3,
+          "LOP3.LUT": 11,
+          "STS.128": 4,
+          "IMAD": 2,
+          "SHF.R.U32.HI": 1,
+          "LDSM.16.M88.4": 8,
+          "LDSM.16.MT88.4": 8,
+          "HMMA.16816.F32": 32,
+          "UIADD3": 2,
+          "ISETP.NE.U32.AND": 1,
+          "IMAD.X": 1,
+          "IMAD.U32": 2,
+          "BRA": 1
+        },
+        "total_output_tiles": 2048,
+        "k_iterations_per_tile": 128,
+        "local_opcodes": {},
+        "local_ops_inside_k": 0,
+        "local_ops_outside_k": 0,
+        "logical_input_read_bytes": 8589934592,
+        "k_loop_warp_instruction_instances_estimate": 952107008,
+        "source_A_read_bytes": 4294967296,
+        "source_B_read_bytes": 4294967296
+      }
+    },
+    "D": {
+      "resource": {
+        "spec": [
+          128,
+          128,
+          32,
+          16
+        ],
+        "registers": 120,
+        "local_bytes": 0,
+        "shared_bytes": 32768
+      },
+      "median_ms": 6.068703889846802,
+      "min_round_median_ms": 6.057471990585327,
+      "max_round_median_ms": 6.070271968841553,
+      "sass": {
+        "k_loop_start": "0xe50",
+        "k_loop_end": "0x14e0",
+        "k_loop_sass_line": 463,
+        "k_loop_static_instructions": 104,
+        "k_loop_opcode_counts": {
+          "IADD3": 13,
+          "ISETP.LT.AND": 16,
+          "PRMT": 24,
+          "ISETP.GE.AND": 1,
+          "LDG.E.U16": 16,
+          "LOP3.LUT": 2,
+          "UIADD3": 2,
+          "ISETP.NE.U32.AND": 1,
+          "IMAD.WIDE": 1,
+          "IMAD.X": 1,
+          "STS.128": 2,
+          "LDSM.16.M88.4": 4,
+          "LDSM.16.MT88.4": 4,
+          "HMMA.16816.F32": 16,
+          "BRA": 1
+        },
+        "total_output_tiles": 2048,
+        "k_iterations_per_tile": 256,
+        "local_opcodes": {},
+        "local_ops_inside_k": 0,
+        "local_ops_outside_k": 0,
+        "logical_input_read_bytes": 8589934592,
+        "k_loop_warp_instruction_instances_estimate": 872415232,
+        "source_A_read_bytes": 4294967296,
+        "source_B_read_bytes": 4294967296
+      }
+    }
+  },
+  "paired_time_ratios": {
+    "A/B": {
+      "median": 1.0243902911975888,
+      "minimum": 1.0225399296112119,
+      "maximum": 1.0273063580526702
+    },
+    "A/C": {
+      "median": 0.984468831774969,
+      "minimum": 0.9833110184842541,
+      "maximum": 0.9868634260645432
+    },
+    "C/D": {
+      "median": 0.8856642797167874,
+      "minimum": 0.8851322509939139,
+      "maximum": 0.8859740180732697
+    },
+    "D/B": {
+      "median": 1.175069392119493,
+      "minimum": 1.1747591979547338,
+      "maximum": 1.175723864530437
+    }
+  },
+  "counter_collection": {
+    "success": false,
+    "error": "ERR_NVGPUCTRPERM",
+    "driver_setting": "RmProfilingAdminOnly: 1",
+    "unavailable": [
+      "DRAM traffic",
+      "cache hit rates",
+      "scheduler stalls",
+      "achieved occupancy",
+      "compute utilization"
+    ]
+  },
+  "interpretation": [
+    "B 的 spill/refill 全在 K 循环外，并非每个 K 分块反复读写。",
+    "D->B 只增大 BM，实测更快；新增 spill 的代价小于该配置变化带来的综合收益。",
+    "逻辑输入读取量从 8 GiB 降到 6 GiB，来自 B 矩阵在更大 M tile 内的复用；这不是实测 DRAM 流量。",
+    "A->C 单独增加 warp 未提速，不能把 B 的优势单独归因于更多 warp。",
+    "实际缓存命中率、stall 原因及各因素的精确时间占比尚需具有权限的 Nsight Compute 采集。"
+  ]
+}
