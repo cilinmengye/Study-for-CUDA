@@ -5,11 +5,15 @@ main.py：Group GEMM 学习入口，先检查正确性，再运行性能测试�
     python main.py                 # 运行全部内容，与原教程顺序一致
     python test_correctness.py     # 只检查正确性
     python benchmarks.py           # 只运行性能测试
+    python cublas_grouped_gemm.py   # 单独运行 cuBLAS 原生 Grouped GEMM 示例
 无图形界面时可在命令前加 MPLBACKEND=Agg。首次运行会 JIT 编译并自动调优。
 
 建议阅读顺序：
     test_correctness.py -> grouped_gemm.py -> grouped_gemm_tma.py -> benchmarks.py
     common.py 提供上述模块共享的设备信息。
+
+性能表中的 PyTorch loop 是逐次 torch.matmul；cuBLAS Grouped 则直接调用
+cublasGemmGroupedBatchedEx，输出/指针表/handle 均在计时前准备，使用 FP32 累加。
 
 教程来源：https://triton-lang.org/main/getting-started/tutorials/08-grouped-gemm.html
 """

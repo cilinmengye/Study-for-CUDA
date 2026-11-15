@@ -31,7 +31,8 @@ import torch
 import triton
 import triton.testing
 
-from common import DEVICE, num_sms, supports_tma
+from common import DEVICE, is_cuda, num_sms, supports_tma
+from cublas_grouped_gemm import CublasGroupedGemm
 from grouped_gemm import grouped_matmul_kernel
 from grouped_gemm_tma import grouped_matmul_tma_kernel, set_tma_allocator
 
@@ -107,11 +108,14 @@ def torch_perf_fn(group_A, group_B):
         line_arg='provider',
         # argument name whose value corresponds to a different line in the plot
         # possible values for `line_arg``
-        line_vals=['cublas', 'triton'] + (['triton-tma'] if supports_tma() else []),
+        line_vals=(['cublas', 'triton'] + (['cublas-grouped'] if is_cuda() else [])
+                   + (['triton-tma'] if supports_tma() else [])),
         # label name for the lines
-        line_names=["cuBLAS", "Triton"] + (['Triton + TMA'] if supports_tma() else []),
+        line_names=(["PyTorch loop", "Triton"] + (['cuBLAS Grouped'] if is_cuda() else [])
+                    + (['Triton + TMA'] if supports_tma() else [])),
         # line styles
-        styles=[('green', '-'), ('blue', '-')] + ([('red', '-')] if supports_tma() else []),
+        styles=([('green', '-'), ('blue', '-')] + ([('purple', '-')] if is_cuda() else [])
+                + ([('red', '-')] if supports_tma() else [])),
         ylabel="runtime(ms)",  # label name for the y-axis
         plot_name="group-gemm-performance",
         # name for the plot. Used also as a file name for saving the plot.
@@ -158,6 +162,11 @@ def benchmark_square_matrices(N, provider):
 
     # NOTE: 返回耗时的中位数、20% 和 80% 分位数；min_ms/max_ms 是原教程变量名。
     quantiles = [0.5, 0.2, 0.8]
+    if provider == 'cublas-grouped':
+        # NOTE: 准备与释放均在计时之外；四个同形状 GEMM 合并为一个组，group_size=[4]。
+        with CublasGroupedGemm(group_A, group_B, group_C) as operation:
+            return triton.testing.do_bench(operation.run, quantiles=quantiles)
+
     if provider == 'cublas':
         ms, min_ms, max_ms = triton.testing.do_bench(lambda: torch_perf_fn(group_A, group_B), quantiles=quantiles)
     if provider == 'triton':
@@ -178,11 +187,14 @@ def benchmark_square_matrices(N, provider):
         line_arg='provider',
         # argument name whose value corresponds to a different line in the plot
         # possible values for `line_arg``
-        line_vals=['cublas', 'triton'] + (['triton-tma'] if supports_tma() else []),
+        line_vals=(['cublas', 'triton'] + (['cublas-grouped'] if is_cuda() else [])
+                   + (['triton-tma'] if supports_tma() else [])),
         # label name for the lines
-        line_names=["cuBLAS", "Triton"] + (['Triton + TMA'] if supports_tma() else []),
+        line_names=(["PyTorch loop", "Triton"] + (['cuBLAS Grouped'] if is_cuda() else [])
+                    + (['Triton + TMA'] if supports_tma() else [])),
         # line styles
-        styles=[('green', '-'), ('blue', '-')] + ([('red', '-')] if supports_tma() else []),
+        styles=([('green', '-'), ('blue', '-')] + ([('purple', '-')] if is_cuda() else [])
+                + ([('red', '-')] if supports_tma() else [])),
         ylabel="runtime(ms)",  # label name for the y-axis
         plot_name="group-gemm-performance-m-8192-k-8192",
         # name for the plot. Used also as a file name for saving the plot.
@@ -233,6 +245,11 @@ def benchmark_batches(M, provider):
     d_g_t_lds = torch.tensor(g_T_lds, dtype=torch.int32, device=DEVICE)
 
     quantiles = [0.5, 0.2, 0.8]
+    if provider == 'cublas-grouped':
+        # NOTE: C 与 GPU 指针表重复使用，只测 cublasGemmGroupedBatchedEx 的提交与执行。
+        with CublasGroupedGemm(group_A, group_B, group_C) as operation:
+            return triton.testing.do_bench(operation.run, quantiles=quantiles)
+
     if provider == 'cublas':
         ms, min_ms, max_ms = triton.testing.do_bench(lambda: torch_perf_fn(group_A, group_B), quantiles=quantiles)
     if provider == 'triton':
