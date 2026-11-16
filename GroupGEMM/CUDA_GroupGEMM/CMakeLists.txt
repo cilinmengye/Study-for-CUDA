@@ -26,7 +26,7 @@ target_include_directories(group_gemm_bench SYSTEM PRIVATE "${CUTLASS_DIR}/inclu
 target_compile_definitions(group_gemm_bench PRIVATE
     GROUP_GEMM_RESULTS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/results"
 )
-target_link_libraries(group_gemm_bench PRIVATE CUDA::cudart CUDA::cublas)
+target_link_libraries(group_gemm_bench PRIVATE CUDA::cudart CUDA::cublas ${CMAKE_DL_LIBS})
 set_target_properties(group_gemm_bench PROPERTIES
     CXX_STANDARD 17
     CUDA_STANDARD 17
@@ -40,7 +40,7 @@ target_compile_options(group_gemm_bench PRIVATE
 option(ENABLE_CUSTOM "Build the custom contiguous/masked CUDA kernels" OFF)
 if(ENABLE_CUSTOM)
     # 保留当前实现的文件名，两个目标使用同一份 kernel 源码。
-    # tilegemm/tilegemm_v0.cu 是被包含的设备模板定义，不单独编译。
+    # tilegemm/tilegemm_v0.cu 和 tilegemm_v1.cu 是被包含的设备模板定义，不单独编译。
     set(CUSTOM_GEMM_SOURCE src/cutsom_gemm.cu)
     target_sources(group_gemm_bench PRIVATE ${CUSTOM_GEMM_SOURCE})
     target_compile_definitions(group_gemm_bench PRIVATE ENABLE_CUSTOM=1)

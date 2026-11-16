@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <iostream>
 #include <utility>
+#include <nvtx3/nvToolsExt.h>
 
 namespace group_gemm {
 
@@ -184,7 +185,11 @@ void run_case(const CaseSpec& spec, DType dtype, const Options& options,
             timers.back()->launch_batch();
             check_output(dataset, reference);
         }
+
+        // NOTE: 只标记正式测量；候选调优也会调用 measure_rounds。
+        nvtxRangePushA("formal");
         const auto samples = measure_rounds(timers, options.repeats);
+        nvtxRangePop();
 
         for (size_t i = 0; i < operations.size(); ++i) {
             const double latency_us = median(samples[i]);

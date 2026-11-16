@@ -1,6 +1,6 @@
 /*
  * cutsom_gemm.cu
- * 基础 SIMT Group GEMM：两个布局 kernel 共用一个块内 tile GEMM 函数。
+ * Tensor Core Group GEMM：两个布局 kernel 共用一个块内 tile GEMM 函数。
  * 阅读顺序：tile_gemm -> 专家布局与 persistent 调度 -> host 启动入口。
  * NOTE: 输入输出为 FP16/BF16，使用 FP32 累加；W 的物理布局是 [experts,N,K]。
  */
@@ -12,6 +12,7 @@
 
 // NOTE: 设备模板在当前翻译单元中实例化，保留原来的 __forceinline__ 调用方式。
 #include "tilegemm/tilegemm_v0.cu"
+#include "tilegemm/tilegemm_v1.cu"
 
 namespace group_gemm {
 namespace {
@@ -25,7 +26,7 @@ namespace {
  * x_group, w_group, y_group: [Device] 当前专家的矩阵起点。
  * M 为有效行数；offs_m/offs_n 为输出 tile 的元素坐标。
  * WARNING: 整个 CTA 必须一起调用，线程数与 NUM_THREADS 一致。
- * NOTE: 仅在此处选择版本；新增 tilegemm_v1.cu 后，包含它并将下面的转发改为 tile_gemm_v1。
+ * NOTE: 仅在此处选择版本；v1 使用 Tensor Core，改回 tile_gemm_v0 即可对照 SIMT 实现。
  */
 template<typename T, int BLOCK_M, int BLOCK_N, int BLOCK_K, int NUM_THREADS>
 __device__ __forceinline__ void tile_gemm(
@@ -38,7 +39,7 @@ __device__ __forceinline__ void tile_gemm(
     int offs_m,
     int offs_n
 ) {
-    tile_gemm_v0<T, BLOCK_M, BLOCK_N, BLOCK_K, NUM_THREADS>(
+    tile_gemm_v1<T, BLOCK_M, BLOCK_N, BLOCK_K, NUM_THREADS>(
         x_group, w_group, y_group, M, N, K, offs_m, offs_n
     );
 }
@@ -180,6 +181,84 @@ cudaError_t get_grid_blocks(int& grid_blocks) {
 }
 
 
+// `get_tuned_grid_blocks`代码目的: 提高 Theoretical Occupancy，是为了让 SM 能驻留更多独立的 warp：
+// 当一部分 warp 等待数据或同步时，调度器还能选择其他 warp 执行。最终目标是减少发射空档、缩短 kernel 时间。
+// Theoretical Occupancy = 当前 kernel 配置允许驻留的 warp 数 / 硬件最大驻留 warp 数
+// 当前 kernel 配置允许驻留的 warp 数受到 warp 消耗多少资源限制。
+// 也可以理解为：Theoretical Occupancy 主要受每个 SM 的资源容量，以及每个 CTA 消耗多少资源限制。
+// NOTE: 实际采用的数量不会超过 occupancy 查询上限。
+constexpr int TARGET_CTAS_PER_SM = 64;
+
+// NOTE: -1 表示让 CUDA 自动选择。
+//       0..100 表示共享内存容量偏好的百分比，不是 KiB。
+constexpr int SHARED_CARVEOUT_PERCENT = cudaSharedmemCarveoutDefault;
+
+/*
+ * 用来查询 Kernel 实际 SM 能够存放下多少个 CTA.
+ * grid_blocks: [Host] 输出最终 grid 大小。
+ * sm_count: 当前设备的 SM 数量。
+ *
+ * NOTE: Kernel 是编译期 kernel 符号，因此每个具体 kernel 有独立缓存。
+ *       在 Graph capture 前先正常调用一次，完成初始化；
+ *       现有 benchmark 的预热流程已经满足这一点。
+ *       此简化缓存假定进程内不调用 cudaDeviceReset，
+ *       也不在其他代码中更改这些 kernel 属性。
+ */
+template<auto Kernel, int NUM_THREADS>
+cudaError_t get_tuned_grid_blocks(int sm_count, int& grid_blocks) {
+    static_assert(TARGET_CTAS_PER_SM > 0, "CTA target must be positive");
+    static_assert(
+        SHARED_CARVEOUT_PERCENT >= -1 && SHARED_CARVEOUT_PERCENT <= 100,
+        "Shared-memory preference must be -1 or a percentage"
+    );
+
+    int device = 0;
+    cudaError_t status = cudaGetDevice(&device);
+    if (status != cudaSuccess) {
+        return status;
+    }
+
+    // PERF: 避免每次 launch 都重新设置属性、查询 occupancy。
+    //       每个 CPU 线程缓存最近使用的设备；切换设备时重新查询。
+    static thread_local int cached_device = -1;
+    static thread_local int cached_ctas_per_sm = 0;
+
+    if (cached_device != device) {
+        // 先设置当前 kernel 的共享内存偏好。
+        status = cudaFuncSetAttribute(
+            Kernel,
+            cudaFuncAttributePreferredSharedMemoryCarveout,
+            SHARED_CARVEOUT_PERCENT
+        );
+        if (status != cudaSuccess) {
+            return status;
+        }
+
+        // 查询资源允许的最大驻留 CTA 数。
+        // NOTE: 0 表示动态共享内存为零；静态 __shared__ 数组会自动计入。
+        int max_ctas_per_sm = 0;
+        status = cudaOccupancyMaxActiveBlocksPerMultiprocessor(
+            &max_ctas_per_sm, Kernel, NUM_THREADS, 0
+        );
+        if (status != cudaSuccess) {
+            return status;
+        }
+        if (max_ctas_per_sm == 0) {
+            return cudaErrorInvalidConfiguration;
+        }
+
+        // 例如目标为 4、资源上限为 2，则实际按 2 计算。
+        cached_ctas_per_sm = TARGET_CTAS_PER_SM < max_ctas_per_sm
+            ? TARGET_CTAS_PER_SM : max_ctas_per_sm;
+        cached_device = device;
+    }
+
+    // NOTE: 这里只决定全卡 CTA 数量，具体分配到哪个 SM 仍由 GPU 调度。
+    grid_blocks = sm_count * cached_ctas_per_sm;
+    return cudaSuccess;
+}
+
+
 /* args: [Host] 参数结构，所有指针均为 [Device]；仅向调用者的 stream 提交计算。 */
 template<
     typename T,
@@ -193,6 +272,20 @@ cudaError_t launch_contiguous_typed(
     cudaStream_t stream,
     int grid_blocks
 ) {
+    // 外层传入的 grid_blocks 当前其实是 SM 数量。
+    const int sm_count = grid_blocks;
+
+    const cudaError_t status = get_tuned_grid_blocks<
+        custom_contiguous_group_gemm_kernel<
+            T, BLOCK_M, BLOCK_N, BLOCK_K, NUM_THREADS
+        >,
+        NUM_THREADS
+    >(sm_count, grid_blocks);
+
+    if (status != cudaSuccess) {
+        return status;
+    }
+
     custom_contiguous_group_gemm_kernel<
         T, BLOCK_M, BLOCK_N, BLOCK_K, NUM_THREADS
     ><<<grid_blocks, NUM_THREADS, 0, stream>>>(
@@ -223,6 +316,19 @@ cudaError_t launch_masked_typed(
     cudaStream_t stream,
     int grid_blocks
 ) {
+    const int sm_count = grid_blocks;
+
+    const cudaError_t status = get_tuned_grid_blocks<
+        custom_masked_group_gemm_kernel<
+            T, BLOCK_M, BLOCK_N, BLOCK_K, NUM_THREADS
+        >,
+        NUM_THREADS
+    >(sm_count, grid_blocks);
+
+    if (status != cudaSuccess) {
+        return status;
+    }
+
     custom_masked_group_gemm_kernel<
         T, BLOCK_M, BLOCK_N, BLOCK_K, NUM_THREADS
     ><<<grid_blocks, NUM_THREADS, 0, stream>>>(
@@ -261,16 +367,18 @@ inline constexpr ContiguousLaunchFn ContiguousLaunchers[] = {
     &launch_contiguous_typed<T, 32, 32, 16, 128>,
     &launch_contiguous_typed<T, 32, 64, 16, 128>,
     &launch_contiguous_typed<T, 64, 64, 32, 128>,
-    &launch_contiguous_typed<T, 64, 64, 32, 256>,
+    &launch_contiguous_typed<T, 64, 64, 32, 256>
 };
 
 template<typename T>
 inline constexpr MaskedLaunchFn MaskedLaunchers[] = {
+    &launch_masked_typed<T, 16, 64, 32, 128>,
+    &launch_masked_typed<T, 16, 32, 16, 128>,
+    &launch_masked_typed<T, 16, 64, 16, 128>,
     &launch_masked_typed<T, 32, 64, 32, 128>,
     &launch_masked_typed<T, 32, 32, 16, 128>,
     &launch_masked_typed<T, 32, 64, 16, 128>,
-    &launch_masked_typed<T, 64, 64, 32, 128>,
-    &launch_masked_typed<T, 64, 64, 32, 256>,
+    &launch_masked_typed<T, 64, 64, 32, 128>
 };
 
 }  // namespace

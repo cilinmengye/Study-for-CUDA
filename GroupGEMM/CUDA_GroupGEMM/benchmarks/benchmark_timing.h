@@ -6,6 +6,8 @@
 
 #include "grouped_gemm.h"
 
+#include <nvtx3/nvToolsExt.h>
+
 namespace group_gemm {
 
 // ===========================
@@ -77,7 +79,10 @@ public:
         } else {
             // 普通调用保留实际 host 提交方式，GPU 时间线可能出现提交间隙。
             for (int i = 0; i < iterations_; ++i) {
+                // NOTE: 一次范围包含整个 Group GEMM 调用启动的所有 kernel。
+                nvtxRangePushA("gemm");
                 operation_.run();
+                nvtxRangePop();
             }
         }
     }
