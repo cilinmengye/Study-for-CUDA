@@ -51,11 +51,12 @@ namespace {
  *
  * WARNING: XOR 作用于完整线性下标，不只是 k；BK=16/32 时可能改变物理行。
  *          此映射在每 8 行内是一一对应的，不需要 padding；写入和读取必须共用它。
- *          下面只支持已验证的 BK=16/32，不能随意替换为其他步长。
+ *          v3 的 BK=64 正好每行 8 段，此时 XOR 只改变行内段号：固定 k 时，
+ *          相邻 8 行仍分散在不同 bank 组，沿一行复制的 8 个段也互不重叠。
  */
 template<int BLOCK_K>
 __device__ __forceinline__ int tile_smem_offset_v1(int row, int k) {
-    static_assert(BLOCK_K == 16 || BLOCK_K == 32, "v1 swizzle requires BK=16 or BK=32");
+    static_assert(BLOCK_K == 16 || BLOCK_K == 32 || BLOCK_K == 64, "unsupported shared row stride");
     return (row * BLOCK_K + k) ^ ((row & 7) << 3);
 }
 
@@ -122,6 +123,10 @@ __device__ __forceinline__ void tile_gemm_v1(
     int offs_m,
     int offs_n
 ) {
+    /*
+     * 关于参数: x_group, w_group, y_group 为此次需要进行 GEMM 计算的数据 x, w, y起始地址。
+     * offs_m, offs_n 是此次 CTA 负责的 Tile GEMM 对于此次需要计算的数据 x 在 m 维度和 w 在 n 维度的偏移 
+     */
     // 三层分块：先把 CTA 输出分给各 warp，再把 warp 输出分成 16x8 指令 tile。
     constexpr int MMA_M = 16;
     constexpr int MMA_N = 8;
@@ -135,22 +140,27 @@ __device__ __forceinline__ void tile_gemm_v1(
                   "CTA N must be a multiple of MMA N");
 
     // NOTE: 优先沿 M 放置 warp，剩余 warp 沿 N 排列；兼容现有 128/256/512 线程配置。
-    //       默认 BM=32,BN=64,线程数=128：WARPS_M=2,WARPS_N=2，每个 warp 算 16x32。
-    //       一个 warp 的 16x32 由 N 方向的 4 个 16x8 MMA tile 拼成。
+    //       案例默认 BLOCK_M = 32, BLOCK_N = 64, BLOCK_K = 32, NUM_THREAD = 128
+    //       那么可知 NUM_WARPS = 4, 如下可以计算得到 WARPS_M = 2, WARPS_N = 2，
+    //       WARPS_M 表示 Tile 在 M 维度需要多个 Warp 完成，WARPS_N 表示 Tile 在 N 维度上需要多少个 Warp 完成 
+    //       规定 WARPS_M * WARPS_N = NUM_WARPS
+    //       在此处每个 warp 算 16x32, 一个 warp 的 16x32 由 N 方向的 4 个 16x8 MMA tile 拼成。
     constexpr int WARPS_M = BLOCK_M / MMA_M < NUM_WARPS ? BLOCK_M / MMA_M : NUM_WARPS;
     constexpr int WARPS_N = NUM_WARPS / WARPS_M;
     static_assert(NUM_WARPS % WARPS_M == 0 && BLOCK_M % WARPS_M == 0,
                   "warps must evenly partition CTA M");
     static_assert(BLOCK_N % WARPS_N == 0, "warps must evenly partition CTA N");
+    // WARP_M 表示每个 Warp 在 Tile M 维度上需要负责多少行，在此处为 16
+    // WARP_N 表示每个 Warp 在 Tile N 维度上需要负责多少列，在此处为 32
     constexpr int WARP_M = BLOCK_M / WARPS_M;
     constexpr int WARP_N = BLOCK_N / WARPS_N;
     static_assert(WARP_M % MMA_M == 0 && WARP_N % MMA_N == 0,
                   "warp tiles must contain complete MMA tiles");
     
-    // MMA_TILES_M 表示在 MMA 层次上, 处理一个 Warp 负责的 warp_tile, 在 M 维度上需要多个 mma_tile 
+    // MMA_TILES_M 表示在 MMA 层次上, 处理一个 Warp 负责的 warp_tile, 在 M 维度上需要多个 mma_tile 计算
     // 沿用上述案例，BM=32, WARPS_M=2, WARP_M=16, MMA_M=16 => MMA_TILES_M = 1
     constexpr int MMA_TILES_M = WARP_M / MMA_M;
-    // MMA_TILES_N 表示在 MMA 层次上, 处理一个 Warp 负责的 warp_tile, 在 N 维度上需要多个 mma_tile 
+    // MMA_TILES_N 表示在 MMA 层次上, 处理一个 Warp 负责的 warp_tile, 在 N 维度上需要多个 mma_tile 计算
     // 沿用上述案例，BM=64, WARPS_N=2, WARP_N=32, MMA_N=8 => MMA_TILES_M = 4
     constexpr int MMA_TILES_N = WARP_N / MMA_N;
 
@@ -161,10 +171,10 @@ __device__ __forceinline__ void tile_gemm_v1(
     const int warp_m = (warp_id / WARPS_N) * WARP_M;
     const int warp_n = (warp_id % WARPS_N) * WARP_N;
 
-    // swizzle 使用一维存储；显式对齐保证每个 8 元素段满足 ldmatrix 的 16-byte 对齐。
     const T* x_tile_base = x_group + int64_t(offs_m) * K;
     const T* w_tile_base = w_group + int64_t(offs_n) * K;
     T* y_tile_base = y_group + int64_t(offs_m) * N + offs_n;
+    // swizzle 使用一维存储；显式对齐保证每个 8 元素段满足 ldmatrix 的 16-byte 对齐。
     __shared__ __align__(16) T x_tile[BLOCK_M * BLOCK_K];
     __shared__ __align__(16) T w_tile[BLOCK_N * BLOCK_K];
     
@@ -175,17 +185,19 @@ __device__ __forceinline__ void tile_gemm_v1(
 
     // 每轮只搬运一个 K 分块；v1 先建立同步的数据流，尚未重叠搬运与计算。
     for (int64_t offs_k = 0; offs_k < K; offs_k += BLOCK_K) {
-        // 连续线程沿全局 K 读取；swizzle 只重排共享内存中的 16-byte 段。
-        // WARNING: 必须先判断 M/K 再读 X，不能读入 masked padding 的 NaN 后再乘零。
+
+        // CTA 中全部线程一起搬运 Tile x 数据
         for (int ele_idx = tid; ele_idx < BLOCK_M * BLOCK_K; ele_idx += NUM_THREADS) {
             const int tile_m = ele_idx / BLOCK_K;
             const int tile_k = ele_idx % BLOCK_K;
             const bool valid = int64_t(offs_m) + tile_m < M && offs_k + tile_k < K;
+            // swizzle 只重排共享内存中的 16-byte 段。
             x_tile[tile_smem_offset_v1<BLOCK_K>(tile_m, tile_k)] = valid
                 ? x_tile_base[int64_t(tile_m) * K + offs_k + tile_k]
                 : static_cast<T>(0.0f);
         }
 
+        // CTA 中全部线程一起搬运 Tile w 数据
         // PERF: W 同样沿物理 K 连续搬运，不再使用 v0 的 w_tile[k][n] 跨行写入。
         //       BK=32、BN=64 时，v0 相邻线程的 shared 地址相差 128 bytes；
         //       这里保留 [N,K] 的逻辑顺序，再由同一 swizzle 分散 ldmatrix 的行地址。
@@ -199,9 +211,10 @@ __device__ __forceinline__ void tile_gemm_v1(
         }
 
         // WARNING: MMA 的 .sync 只协调 warp，不能代替 CTA 内生产者与消费者之间的 barrier。
+        // 所以要等待 CTA 中线程搬运数据全部完成。
         __syncthreads();
 
-        // BK=32 需要沿 K 执行两轮 m16n8k16；BK=16 只需要一轮。
+        // BK = 32 需要沿 K 执行两轮 m16n8k16；BK = 16 只需要一轮。
         #pragma unroll
         for (int tile_k = 0; tile_k < BLOCK_K; tile_k += MMA_K) {
             uint32_t a_fragment[MMA_TILES_M][4];

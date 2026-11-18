@@ -20,6 +20,7 @@ struct Options {
     std::string timing = "both";
     std::string csv = "results.csv";
     int device = 0;
+    int custom_config = -1;  // -1 自动选优；固定配置可在 NCU 下复现未插桩运行。
     int warmup = 20;
     int iterations = 100;
     int repeats = 7;

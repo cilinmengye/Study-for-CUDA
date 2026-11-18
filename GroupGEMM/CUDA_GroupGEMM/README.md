@@ -1,6 +1,6 @@
 # CUDA Group GEMM 学习基线
 
-独立的 CUDA C++ 项目：cuBLAS 原生 Grouped GEMM、CUTLASS Grouped GEMM、自定义 Group GEMM（v0 SIMT、v1 Tensor Core、v2 异步双缓冲），以及共同的正确性/性能测试。支持 FP16、BF16 输入输出，统一使用 FP32 累加。
+独立的 CUDA C++ 项目：cuBLAS 原生 Grouped GEMM、CUTLASS Grouped GEMM、自定义 Group GEMM（v0 SIMT、v1 Tensor Core、v2 异步双缓冲、v3 向量写回），以及共同的正确性/性能测试。支持 FP16、BF16 输入输出，统一使用 FP32 累加。
 
 ## 目录与阅读顺序
 
@@ -18,8 +18,9 @@ CUDA_GroupGEMM/
 │   ├── cutsom_gemm.cu              # 两种布局调度与 tile_gemm 入口
 │   └── tilegemm/
 │       ├── tilegemm_v0.cu          # SIMT tile GEMM
-│       ├── tilegemm_v1.cu          # 同步加载 + Tensor Core
-│       └── tilegemm_v2.cu          # 16-byte cp.async + 双缓冲 + Tensor Core
+│       ├── tilegemm_v1_TensorCore_Swizzle.cu  # 同步加载 + Tensor Core
+│       ├── tilegemm_v2_Cpasync_Doublebuffer.cu  # 异步双缓冲
+│       └── tilegemm_v3_Merge_MemoryAccess.cu          # 成对读取 B 片段、重排输出、16 字节写回
 ├── tests/                          # 数据生成、参考值和正确性断言
 │   ├── testbed.h
 │   ├── test_correctness.cu
@@ -209,9 +210,11 @@ cudaError_t launch_masked(const MaskedGemmArgs& args, cudaStream_t stream);
 
 两个外层 kernel 负责专家布局与 persistent tile 调度，共同调用 `__device__ __forceinline__ tile_gemm()`。这个函数复用当前 CTA 的线程、共享内存和 barrier，不产生子 kernel；整个 block 必须一起调用它。核心完成协作加载、FP32 累加和边界写回。
 
-`cutsom_gemm.cu` 中的 `tile_gemm()` 当前转发到 [tile_gemm_v2()](src/tilegemm/tilegemm_v2.cu)。v0/v1 保留作为学习基线，两个布局的索引和调度仍留在原文件。
+`cutsom_gemm.cu` 中的 `tile_gemm()` 当前转发到 [tile_gemm_v3()](src/tilegemm/tilegemm_v3_Merge_MemoryAccess.cu)。v0/v1 保留作为学习基线，两个布局的索引和调度仍留在原文件。
 
-三个版本都是被包含到同一 CUDA 翻译单元的设备模板，不单独作为 CMake 编译源。v2 复用 v1 的 swizzle/MMA 封装；比较版本时只需修改 `tile_gemm()` 内的转发调用并重新编译，版本选择不产生运行时分派。
+四个版本都是编译期实例化的设备模板。v3 在最后一块 K 完成后将同一块共享内存用于输出重排，使相邻线程能沿列进行 16 字节写回。K 循环中成对读取相邻 N 片段，并增加 BK=64 和较宽输出 tile 的候选。未对齐的输出子视图使用标量写回。
+
+固定某个候选以对照 NCU 时，使用 `--provider custom --scenario prefill --custom-config 4`。在 RTX 4090 上，本项目的 Prefill 场景实测以编号 8（128×128×32，128 线程，warp 排列 4×1）最快。配置编号分别对应 contiguous/masked 的候选表，省略该选项时仍自动选优。
 
 v2 使用两套共享内存 X/W：预热 `copy(0) → commit → wait → barrier`；稳态 `copy(k+1) → commit → MMA(k) → wait → barrier → 交换 stage`。复制在当前块计算前发起，在计算后才等待，提供数据搬运与计算重叠的机会。最后一轮不再预取，仍等待并同步，确保 persistent 调度下一个输出 tile 能安全复用共享内存。
 
@@ -236,7 +239,7 @@ W 在两种布局中都从 `e * N * K` 个元素处开始。masked 仅计算有�
 cmake -S . -B build -DENABLE_CUSTOM=ON
 cmake --build build -j 2
 ./build/group_gemm_bench --provider custom --check-only
-./build/group_gemm_bench --csv with_custom_v2.csv
+./build/group_gemm_bench --csv with_custom_v3.csv
 ```
 
 专用回归测试覆盖零专家、M/N/K 尾部、单块/两块/多次 stage 轮换、跨专家 persistent 复用、未对齐 X/W，以及同一 Graph 下缩小/恢复 masked 有效行数。小矩阵通过公共启动接口与 CPU FP64 全量参考比较，并检查 NaN padding 和输出 guard；persistent 案例的 tile 数超过硬件最大驻留 CTA 总数。Sanitizer 分别提供非法访问、共享内存竞态和 barrier 使用的证据，性能另用不带插桩的完整 benchmark 测量。修改 kernel 或构建后需要重新验证相应结果：

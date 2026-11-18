@@ -40,7 +40,7 @@ target_compile_options(group_gemm_bench PRIVATE
 option(ENABLE_CUSTOM "Build the custom contiguous/masked CUDA kernels" OFF)
 if(ENABLE_CUSTOM)
     # 保留当前实现的文件名，两个目标使用同一份 kernel 源码。
-    # tilegemm/tilegemm_v{0,1,2}.cu 是被包含的设备模板定义，不单独编译。
+    # tilegemm/ 下的各版本 是被包含的设备模板定义，不单独编译。
     set(CUSTOM_GEMM_SOURCE src/cutsom_gemm.cu)
     target_sources(group_gemm_bench PRIVATE ${CUSTOM_GEMM_SOURCE})
     target_compile_definitions(group_gemm_bench PRIVATE ENABLE_CUSTOM=1)

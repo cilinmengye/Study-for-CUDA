@@ -139,10 +139,16 @@ void run_case(const CaseSpec& spec, DType dtype, const Options& options,
         const int config_count = problem.layout == Layout::Contiguous
             ? contiguous_config_count() : masked_config_count();
 
+        if (options.custom_config >= config_count) {
+            throw std::runtime_error("--custom-config out of range for " + std::string(layout_name(problem.layout)));
+        }
+        const int first = options.custom_config < 0 ? 0 : options.custom_config;
+        const int end = options.custom_config < 0 ? config_count : first + 1;
+
         std::vector<OperationPtr> candidates;
         std::vector<CheckResult> checks;
 
-        for (int config = 0; config < config_count; ++config) {
+        for (int config = first; config < end; ++config) {
             candidates.push_back(
                 std::make_unique<CustomOperation>(problem, stream, config));
             checks.push_back(validate(*candidates.back(), dataset, reference));
@@ -154,8 +160,9 @@ void run_case(const CaseSpec& spec, DType dtype, const Options& options,
 
         if (!options.check_only) {
             // 计时器销毁后再移动获胜对象，正式测量使用同一配置。
-            const int best = tune_candidates(
-                candidates, dataset, reference, options);
+            // 固定配置时 candidates 仅含该候选，索引为零。
+            const int best = options.custom_config < 0
+                ? tune_candidates(candidates, dataset, reference, options) : 0;
 
             operations.push_back({
                 "custom",

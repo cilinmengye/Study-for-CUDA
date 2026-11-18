@@ -12,8 +12,8 @@
 
 // NOTE: 设备模板在当前翻译单元中实例化，保留原来的 __forceinline__ 调用方式。
 #include "tilegemm/tilegemm_v0.cu"
-#include "tilegemm/tilegemm_v1.cu"
-#include "tilegemm/tilegemm_v2.cu"
+#include "tilegemm/tilegemm_v1_TensorCore_Swizzle.cu"
+#include "tilegemm/tilegemm_v3_Merge_MemoryAccess.cu"
 
 namespace group_gemm {
 namespace {
@@ -27,7 +27,7 @@ namespace {
  * x_group, w_group, y_group: [Device] 当前专家的矩阵起点。
  * M 为有效行数；offs_m/offs_n 为输出 tile 的元素坐标。
  * WARNING: 整个 CTA 必须一起调用，线程数与 NUM_THREADS 一致。
- * NOTE: 仅在此处选择版本；v2 在 v1 Tensor Core 上增加 16-byte 异步搬运和双缓冲。
+ * NOTE: v3 复用 v2 的异步双缓冲，并重排 Tensor Core 结果以连续写回。
  *       改回 tile_gemm_v1 即可对照同步 Tensor Core 实现，v0 保留为 SIMT 基线。
  */
 template<typename T, int BLOCK_M, int BLOCK_N, int BLOCK_K, int NUM_THREADS>
@@ -41,7 +41,7 @@ __device__ __forceinline__ void tile_gemm(
     int offs_m,
     int offs_n
 ) {
-    tile_gemm_v2<T, BLOCK_M, BLOCK_N, BLOCK_K, NUM_THREADS>(
+    tile_gemm_v3<T, BLOCK_M, BLOCK_N, BLOCK_K, NUM_THREADS>(
         x_group, w_group, y_group, M, N, K, offs_m, offs_n
     );
 }
@@ -76,13 +76,14 @@ __global__ void __launch_bounds__(NUM_THREADS) custom_contiguous_group_gemm_kern
 
     // Group GEMM 开始遍历 Group, 对每个 Group 执行 GEMM
     // 每个专家的逻辑行数与物理起点都由行偏移描述。
+    int64_t row_start = 0;
     for (int expert_idx = 0; expert_idx < experts; ++expert_idx) {
-        const int64_t row_start = row_offsets[expert_idx];
+        const int64_t row_end = row_offsets[expert_idx + 1];
 
         // get this expert the number of tile
         // 我们所谓的 tile 是指处理 (BLOCK_M, BLOCK_K)
         // NOTE: 上句描述 X 的分块；下面 num_expert_tiles 统计的是 Y 上的 (BLOCK_M,BLOCK_N) 分块。
-        const int M = row_offsets[expert_idx + 1] - row_offsets[expert_idx];
+        const int M = static_cast<int>(row_end - row_start);
         const int64_t num_expert_tiles = ((int64_t(M) + BLOCK_M - 1) / BLOCK_M) * tiles_n;
         const int64_t end_expert_tile_range = start_expert_tile_range + num_expert_tiles;
 
@@ -111,6 +112,7 @@ __global__ void __launch_bounds__(NUM_THREADS) custom_contiguous_group_gemm_kern
         }
 
         start_expert_tile_range = end_expert_tile_range;
+        row_start = row_end;
     }
 }
 
@@ -369,7 +371,12 @@ inline constexpr ContiguousLaunchFn ContiguousLaunchers[] = {
     &launch_contiguous_typed<T, 32, 32, 16, 128>,
     &launch_contiguous_typed<T, 32, 64, 16, 128>,
     &launch_contiguous_typed<T, 64, 64, 32, 128>,
-    &launch_contiguous_typed<T, 64, 64, 32, 256>
+    &launch_contiguous_typed<T, 64, 64, 32, 256>,
+    // v3：先在同一 64x64 tile 上比较 BK=32/64，再考察 BN 翻倍后的 X 复用。
+    &launch_contiguous_typed<T, 64, 64, 64, 128>,
+    &launch_contiguous_typed<T, 64, 128, 32, 128>,
+    &launch_contiguous_typed<T, 64, 128, 64, 128>,
+    &launch_contiguous_typed<T, 128, 128, 32, 128>
 };
 
 template<typename T>
@@ -380,7 +387,11 @@ inline constexpr MaskedLaunchFn MaskedLaunchers[] = {
     &launch_masked_typed<T, 32, 64, 32, 128>,
     &launch_masked_typed<T, 32, 32, 16, 128>,
     &launch_masked_typed<T, 32, 64, 16, 128>,
-    &launch_masked_typed<T, 64, 64, 32, 128>
+    &launch_masked_typed<T, 64, 64, 32, 128>,
+    // Decode 的专家有效行较少，保留窄 BM；扩大 BK 使每行的 8 个 lane 搬满 128 字节。
+    &launch_masked_typed<T, 16, 64, 64, 128>,
+    &launch_masked_typed<T, 32, 64, 64, 128>,
+    &launch_masked_typed<T, 16, 128, 64, 128>
 };
 
 }  // namespace

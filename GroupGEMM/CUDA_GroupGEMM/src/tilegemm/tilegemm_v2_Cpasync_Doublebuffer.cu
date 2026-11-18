@@ -9,7 +9,7 @@
  */
 #pragma once
 
-#include "tilegemm_v1.cu"
+#include "tilegemm_v1_TensorCore_Swizzle.cu"
 
 namespace group_gemm {
 namespace {

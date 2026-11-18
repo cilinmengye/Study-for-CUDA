@@ -46,6 +46,7 @@ Options parse_options(int argc, char** argv) {
         else if (key == "--timing") options.timing = value;
         else if (key == "--csv") options.csv = value;
         else if (key == "--device") options.device = integer();
+        else if (key == "--custom-config") options.custom_config = integer();
         else if (key == "--warmup") options.warmup = integer();
         else if (key == "--iterations") options.iterations = integer();
         else if (key == "--repeats") options.repeats = integer();
@@ -59,7 +60,7 @@ Options parse_options(int argc, char** argv) {
         !one_of(options.scenario, {"all", "prefill", "decode"}) ||
         !one_of(options.provider, {"all", "cublas", "cutlass", "custom"}) ||
         !one_of(options.timing, {"both", "normal", "graph"}) ||
-        options.device < 0 || options.warmup < 1 || options.iterations < 1 || options.repeats < 1) {
+        options.custom_config < -1 || options.device < 0 || options.warmup < 1 || options.iterations < 1 || options.repeats < 1) {
         throw std::runtime_error("Invalid options; use --help");
     }
 #ifndef ENABLE_CUSTOM
@@ -86,6 +87,7 @@ void print_help() {
         << "  --provider all|cublas|cutlass|custom\n"
         << "  --timing both|normal|graph --device 0\n"
         << "  --warmup 20 --iterations 100 --repeats 7\n"
+        << "  --custom-config ID        pin custom candidate (-1: tune)\n"
         << "  --csv results.csv         --check-only\n"
         << "Relative --csv paths are rooted at: " << GROUP_GEMM_RESULTS_DIR << '\n'
         << "Defaults: both dtypes, both scenarios, all compiled providers, both timing modes.\n"

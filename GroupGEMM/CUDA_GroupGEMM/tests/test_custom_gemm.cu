@@ -119,11 +119,11 @@ void check_case(const CaseSpec& spec, DType dtype, cudaStream_t stream, int conf
 
 
 /*
- * 通过公共入口验证 X/W 子视图未对齐时的标量安全路径及其与异步路径的混用。
+ * 通过公共入口验证未对齐 X/W 的标量读取与未对齐 Y 的标量写回。
  * NOTE: 参考值仍来自原始 Dataset 的 CPU FP64；只移动 GPU 输入，不改变数值或布局。
  */
-void check_unaligned_inputs(Layout layout, DType dtype, cudaStream_t stream, int config) {
-    Dataset dataset({"unaligned_inputs", layout, 24, 72, {0, 3, 1}, 5}, dtype, stream);
+void check_unaligned_views(Layout layout, DType dtype, cudaStream_t stream, int config) {
+    Dataset dataset({"unaligned_views", layout, 24, 72, {0, 3, 1}, 5}, dtype, stream);
     const auto reference = make_reference(dataset, true);
     const auto p = dataset.problem();
 
@@ -135,31 +135,47 @@ void check_unaligned_inputs(Layout layout, DType dtype, cudaStream_t stream, int
     CUDA_CHECK(cudaMemcpyAsync(x, p.a, dataset.a.bytes(), cudaMemcpyDeviceToDevice, stream));
     CUDA_CHECK(cudaMemcpyAsync(w, p.w, dataset.w.bytes(), cudaMemcpyDeviceToDevice, stream));
 
-    // 分别覆盖 X 标量/W 异步、X 异步/W 标量和两者标量；检查 tail/padding/guard。
-    for (int mask : {1, 2, 3}) {
-        dataset.spec.name = "unaligned_inputs/config=" + std::to_string(config)
+    // v3 的向量写回也需要检查 Y 的实际地址。把连同前后 guard 的整个 Y 区域
+    // 偏移一个 half，回拷后继续使用相同的 CPU 参考、padding 与 guard 断言。
+    const size_t y_bytes = dataset.y_with_guards.bytes();
+    DeviceBuffer shifted_y(y_bytes + sizeof(uint16_t));
+    auto* shifted_guards = shifted_y.get<uint16_t>() + 1;
+    for (int mask : {1, 2, 3, 4}) {
+        dataset.spec.name = "unaligned_views/config=" + std::to_string(config)
             + "/mask=" + std::to_string(mask);
         dataset.reset_output();
         const void* input_x = (mask & 1) ? x : p.a;
         const void* input_w = (mask & 2) ? w : p.w;
+        void* output_y = p.y;
+        if (mask == 4) {
+            // 将 sentinel 带入偏移后的输出区，漏写或越过有效行都会被发现。
+            CUDA_CHECK(cudaMemcpyAsync(shifted_guards, dataset.y_with_guards.get(), y_bytes,
+                                       cudaMemcpyDeviceToDevice, stream));
+            output_y = shifted_guards + Dataset::kGuardElements;
+        }
+
         if (layout == Layout::Contiguous) {
             // 直接调用与 benchmark 相同的公共接口，传入偏移后的 Device 指针。
             const ContiguousGemmArgs args{
-                input_x, input_w, p.y, p.metadata, p.experts(), p.n, p.k, p.dtype
+                input_x, input_w, output_y, p.metadata, p.experts(), p.n, p.k, p.dtype
             };
             CUDA_CHECK(launch_contiguous(args, stream, config));
         } else {
             // masked 无效输入保留 NaN，输出 padding 应逐位保持 sentinel。
             const MaskedGemmArgs args{
-                input_x, input_w, p.y, p.metadata, p.experts(), p.capacity, p.n, p.k, p.dtype
+                input_x, input_w, output_y, p.metadata, p.experts(), p.capacity, p.n, p.k, p.dtype
             };
             CUDA_CHECK(launch_masked(args, stream, config));
+        }
+        if (mask == 4) {
+            CUDA_CHECK(cudaMemcpyAsync(dataset.y_with_guards.get(), shifted_guards, y_bytes,
+                                       cudaMemcpyDeviceToDevice, stream));
         }
         check_output(dataset, reference);
     }
 
     std::cout << "PASS " << dtype_name(dtype) << '/' << layout_name(layout)
-              << "/unaligned_inputs config=" << config << " x/w/both\n";
+              << "/unaligned_views config=" << config << " x/w/both/y\n";
 }
 
 
@@ -248,8 +264,8 @@ int main() {
                 const int config_count = layout == Layout::Contiguous
                     ? contiguous_count : masked_count;
                 for (int config = 0; config < config_count; ++config) {
-                    check_unaligned_inputs(layout, dtype, stream.value, config);
-                    checks += 3;
+                    check_unaligned_views(layout, dtype, stream.value, config);
+                    checks += 4;
                 }
             }
         }
