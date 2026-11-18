@@ -118,6 +118,51 @@ void check_case(const CaseSpec& spec, DType dtype, cudaStream_t stream, int conf
 }
 
 
+/*
+ * 通过公共入口验证 X/W 子视图未对齐时的标量安全路径及其与异步路径的混用。
+ * NOTE: 参考值仍来自原始 Dataset 的 CPU FP64；只移动 GPU 输入，不改变数值或布局。
+ */
+void check_unaligned_inputs(Layout layout, DType dtype, cudaStream_t stream, int config) {
+    Dataset dataset({"unaligned_inputs", layout, 24, 72, {0, 3, 1}, 5}, dtype, stream);
+    const auto reference = make_reference(dataset, true);
+    const auto p = dataset.problem();
+
+    // 保留 2-byte 自然对齐，但破坏 16-byte 对齐，不能交给向量 cp.async。
+    DeviceBuffer shifted_x(dataset.a.bytes() + sizeof(uint16_t));
+    DeviceBuffer shifted_w(dataset.w.bytes() + sizeof(uint16_t));
+    auto* x = shifted_x.get<uint16_t>() + 1;
+    auto* w = shifted_w.get<uint16_t>() + 1;
+    CUDA_CHECK(cudaMemcpyAsync(x, p.a, dataset.a.bytes(), cudaMemcpyDeviceToDevice, stream));
+    CUDA_CHECK(cudaMemcpyAsync(w, p.w, dataset.w.bytes(), cudaMemcpyDeviceToDevice, stream));
+
+    // 分别覆盖 X 标量/W 异步、X 异步/W 标量和两者标量；检查 tail/padding/guard。
+    for (int mask : {1, 2, 3}) {
+        dataset.spec.name = "unaligned_inputs/config=" + std::to_string(config)
+            + "/mask=" + std::to_string(mask);
+        dataset.reset_output();
+        const void* input_x = (mask & 1) ? x : p.a;
+        const void* input_w = (mask & 2) ? w : p.w;
+        if (layout == Layout::Contiguous) {
+            // 直接调用与 benchmark 相同的公共接口，传入偏移后的 Device 指针。
+            const ContiguousGemmArgs args{
+                input_x, input_w, p.y, p.metadata, p.experts(), p.n, p.k, p.dtype
+            };
+            CUDA_CHECK(launch_contiguous(args, stream, config));
+        } else {
+            // masked 无效输入保留 NaN，输出 padding 应逐位保持 sentinel。
+            const MaskedGemmArgs args{
+                input_x, input_w, p.y, p.metadata, p.experts(), p.capacity, p.n, p.k, p.dtype
+            };
+            CUDA_CHECK(launch_masked(args, stream, config));
+        }
+        check_output(dataset, reference);
+    }
+
+    std::cout << "PASS " << dtype_name(dtype) << '/' << layout_name(layout)
+              << "/unaligned_inputs config=" << config << " x/w/both\n";
+}
+
+
 void check_no_experts(DType dtype, cudaStream_t stream) {
     // 空集合必须允许空指针，不能访问矩阵或元数据。
     const ContiguousGemmArgs contiguous{nullptr, nullptr, nullptr, nullptr, 0, 8, 8, dtype};
@@ -154,7 +199,9 @@ int main() {
         // 让小尺寸测试也有多于 grid 大小的 tile，覆盖跨专家的 persistent 复用。
         TestStream stream;
         int sm_count = 0;
+        int max_blocks_per_sm = 0;
         CUDA_CHECK(cudaDeviceGetAttribute(&sm_count, cudaDevAttrMultiProcessorCount, 0));
+        CUDA_CHECK(cudaDeviceGetAttribute(&max_blocks_per_sm, cudaDevAttrMaxBlocksPerMultiprocessor, 0));
 
         // 两个布局可以有不同的候选数量，禁止空表造成测试静默跳过。
         const int contiguous_count = contiguous_config_count();
@@ -168,7 +215,19 @@ int main() {
         auto cases = edge_cases();
         for (Layout layout : {Layout::Contiguous, Layout::Masked}) {
             cases.push_back({"mnk_tail", layout, 72, 40, {0, 33, 0, 65, 1}, 80});
-            cases.push_back({"persistent", layout, 8, 8, std::vector<int>(sm_count + 3, 1), 3});
+
+            // NOTE: 针对 BK=16/32，覆盖仅一块、两块、奇偶轮换和多次覆盖后的 K 尾部。
+            //       三块以上才会再次写 stage 0；只测试 K=8 或两块无法暴露提前覆盖的问题。
+            for (int k : {8, 16, 24, 32, 64, 72, 104, 256, 264}) {
+                cases.push_back({"pipeline_k=" + std::to_string(k), layout,
+                                 24, k, {0, 3, 1}, 5});
+            }
+
+            // WARNING: grid 由 occupancy 决定，可远大于 SM 数；sm_count+3 个 tile 已不足以
+            //          保证 persistent 复用。超过硬件最大 CTA 总数，才能保证同一 CTA 跨专家换 tile。
+            //          K=72 还要求每个输出 tile 退出时异步流水线已排空。
+            cases.push_back({"persistent", layout, 8, 72,
+                             std::vector<int>(sm_count * max_blocks_per_sm + 3, 1), 3});
         }
 
         // 每个候选使用独立数据集与 Graph，避免上个候选的输出掩盖漏写。
@@ -181,6 +240,16 @@ int main() {
                 for (int config = 0; config < config_count; ++config) {
                     check_case(spec, dtype, stream.value, config);
                     ++checks;
+                }
+            }
+
+            // 未对齐输入仍属于原有指针接口，所有配置都必须安全处理。
+            for (Layout layout : {Layout::Contiguous, Layout::Masked}) {
+                const int config_count = layout == Layout::Contiguous
+                    ? contiguous_count : masked_count;
+                for (int config = 0; config < config_count; ++config) {
+                    check_unaligned_inputs(layout, dtype, stream.value, config);
+                    checks += 3;
                 }
             }
         }

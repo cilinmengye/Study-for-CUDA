@@ -13,6 +13,7 @@
 // NOTE: 设备模板在当前翻译单元中实例化，保留原来的 __forceinline__ 调用方式。
 #include "tilegemm/tilegemm_v0.cu"
 #include "tilegemm/tilegemm_v1.cu"
+#include "tilegemm/tilegemm_v2.cu"
 
 namespace group_gemm {
 namespace {
@@ -26,7 +27,8 @@ namespace {
  * x_group, w_group, y_group: [Device] 当前专家的矩阵起点。
  * M 为有效行数；offs_m/offs_n 为输出 tile 的元素坐标。
  * WARNING: 整个 CTA 必须一起调用，线程数与 NUM_THREADS 一致。
- * NOTE: 仅在此处选择版本；v1 使用 Tensor Core，改回 tile_gemm_v0 即可对照 SIMT 实现。
+ * NOTE: 仅在此处选择版本；v2 在 v1 Tensor Core 上增加 16-byte 异步搬运和双缓冲。
+ *       改回 tile_gemm_v1 即可对照同步 Tensor Core 实现，v0 保留为 SIMT 基线。
  */
 template<typename T, int BLOCK_M, int BLOCK_N, int BLOCK_K, int NUM_THREADS>
 __device__ __forceinline__ void tile_gemm(
@@ -39,7 +41,7 @@ __device__ __forceinline__ void tile_gemm(
     int offs_m,
     int offs_n
 ) {
-    tile_gemm_v1<T, BLOCK_M, BLOCK_N, BLOCK_K, NUM_THREADS>(
+    tile_gemm_v2<T, BLOCK_M, BLOCK_N, BLOCK_K, NUM_THREADS>(
         x_group, w_group, y_group, M, N, K, offs_m, offs_n
     );
 }

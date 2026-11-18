@@ -1,6 +1,6 @@
 # CUDA Group GEMM 学习基线
 
-独立的 CUDA C++ 项目：cuBLAS 原生 Grouped GEMM、CUTLASS Grouped GEMM、自定义 SIMT Group GEMM，以及共同的正确性/性能测试。支持 FP16、BF16 输入输出，统一使用 FP32 累加。
+独立的 CUDA C++ 项目：cuBLAS 原生 Grouped GEMM、CUTLASS Grouped GEMM、自定义 Group GEMM（v0 SIMT、v1 Tensor Core、v2 异步双缓冲），以及共同的正确性/性能测试。支持 FP16、BF16 输入输出，统一使用 FP32 累加。
 
 ## 目录与阅读顺序
 
@@ -17,7 +17,9 @@ CUDA_GroupGEMM/
 │   ├── cutlass_grouped_gemm.cu
 │   ├── cutsom_gemm.cu              # 两种布局调度与 tile_gemm 入口
 │   └── tilegemm/
-│       └── tilegemm_v0.cu          # 原有 tile GEMM 计算核心
+│       ├── tilegemm_v0.cu          # SIMT tile GEMM
+│       ├── tilegemm_v1.cu          # 同步加载 + Tensor Core
+│       └── tilegemm_v2.cu          # 16-byte cp.async + 双缓冲 + Tensor Core
 ├── tests/                          # 数据生成、参考值和正确性断言
 │   ├── testbed.h
 │   ├── test_correctness.cu
@@ -207,16 +209,24 @@ cudaError_t launch_masked(const MaskedGemmArgs& args, cudaStream_t stream);
 
 两个外层 kernel 负责专家布局与 persistent tile 调度，共同调用 `__device__ __forceinline__ tile_gemm()`。这个函数复用当前 CTA 的线程、共享内存和 barrier，不产生子 kernel；整个 block 必须一起调用它。核心完成协作加载、FP32 累加和边界写回。
 
-迁移后，`cutsom_gemm.cu` 中的 `tile_gemm()` 仅转发到 [tile_gemm_v0()](src/tilegemm/tilegemm_v0.cu)。原有计算代码与注释完整保留在 v0 中，两个布局的索引和调度仍留在原文件。
+`cutsom_gemm.cu` 中的 `tile_gemm()` 当前转发到 [tile_gemm_v2()](src/tilegemm/tilegemm_v2.cu)。v0/v1 保留作为学习基线，两个布局的索引和调度仍留在原文件。
 
-`tilegemm_v0.cu` 保存设备函数模板，通过 `#include "tilegemm/tilegemm_v0.cu"` 引入同一个 CUDA 翻译单元，保留编译期实例化与内联；不要把它额外添加为 CMake 的独立编译源。以后实现同样签名的 `tile_gemm_v1()`，包含 `tilegemm_v1.cu`，再把 `tile_gemm()` 内唯一的转发调用从 v0 改为 v1 即可。版本选择在编译期完成。
+三个版本都是被包含到同一 CUDA 翻译单元的设备模板，不单独作为 CMake 编译源。v2 复用 v1 的 swizzle/MMA 封装；比较版本时只需修改 `tile_gemm()` 内的转发调用并重新编译，版本选择不产生运行时分派。
+
+v2 使用两套共享内存 X/W：预热 `copy(0) → commit → wait → barrier`；稳态 `copy(k+1) → commit → MMA(k) → wait → barrier → 交换 stage`。复制在当前块计算前发起，在计算后才等待，提供数据搬运与计算重叠的机会。最后一轮不再预取，仍等待并同步，确保 persistent 调度下一个输出 tile 能安全复用共享内存。
+
+`cp.async.wait_group 0` 等待本线程的复制组；随后 `__syncthreads()` 保证其他线程搬来的数据可读，同时保证旧 stage 的所有消费者都读完。这里最多只有一个未完成组，不能改成允许它继续未完成的 `wait_group 1`。核心改动旁的中文注释分别解释预热、稳态、交接和排空。
+
+每次异步复制 16 字节，即 8 个 FP16/BF16 元素。源起点和 K 行步长经过对齐检查；共享内存显式对齐，v1 swizzle 不改变段内连续性。接口 K 为 8 的倍数，因此 K 尾块中的向量要么全有效、要么全补零（`src-size=0`）。无效 M/N 行同样补零且不读源，避免 masked NaN 污染。未满足 16 字节对齐的子视图使用标量安全路径，仍参与相同的 barrier，但不保证搬运与计算重叠。
+
+指令语义参见 [NVIDIA PTX cp.async 文档](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#data-movement-and-conversion-instructions-cp-async)。
 
 | 布局 | X/Y 的专家起始行 | 有效 M |
 |---|---|---|
 | contiguous | `row_offsets[e]` | `row_offsets[e+1] - row_offsets[e]` |
 | masked | `e * capacity` | `valid_rows[e]` |
 
-W 在两种布局中都从 `e * N * K` 个元素处开始。masked 仅计算有效行，既不读取无效 X 行，也不修改无效 Y 行。当前固定使用 tile `32×64×32`、128 threads，grid 的 CTA 数量取当前 GPU 的 SM 数；这是一组基础配置，尚未自动调优，也未使用 Tensor Core。
+W 在两种布局中都从 `e * N * K` 个元素处开始。masked 仅计算有效行，既不读取无效 X 行，也不修改无效 Y 行。两种布局使用各自的 tile 候选表，benchmark 验证后按 Graph 延迟选优；grid 大小由 SM 数与当前 kernel 的 occupancy 上限决定。v2 默认 contiguous tile 的共享内存从 v1 的 6 KiB 增至 12 KiB，增加缓冲区可能降低驻留 CTA 数，因此性能需要实测。
 
 接口中的所有矩阵指针和元数据指针都在 GPU。维度、类型和 stream 由 host 传入。要求 N/K 为正的 8 的倍数，支持任意非负有效 M，FP32 累加；masked 只写有效行。空集合应合法返回。具体参数含义见头文件注释。
 
@@ -226,10 +236,10 @@ W 在两种布局中都从 `e * N * K` 个元素处开始。masked 仅计算有�
 cmake -S . -B build -DENABLE_CUSTOM=ON
 cmake --build build -j 2
 ./build/group_gemm_bench --provider custom --check-only
-./build/group_gemm_bench --csv with_custom.csv
+./build/group_gemm_bench --csv with_custom_v2.csv
 ```
 
-小规模专用回归测试还覆盖零专家、M/N/K 尾部、跨专家 persistent 复用，并在不重新捕获 Graph 的情况下缩小 masked 的有效行数：
+专用回归测试覆盖零专家、M/N/K 尾部、单块/两块/多次 stage 轮换、跨专家 persistent 复用、未对齐 X/W，以及同一 Graph 下缩小/恢复 masked 有效行数。小矩阵通过公共启动接口与 CPU FP64 全量参考比较，并检查 NaN padding 和输出 guard；persistent 案例的 tile 数超过硬件最大驻留 CTA 总数。Sanitizer 分别提供非法访问、共享内存竞态和 barrier 使用的证据，性能另用不带插桩的完整 benchmark 测量。修改 kernel 或构建后需要重新验证相应结果：
 
 ```bash
 ctest --test-dir build -R '^custom_gemm_correctness$' --output-on-failure
