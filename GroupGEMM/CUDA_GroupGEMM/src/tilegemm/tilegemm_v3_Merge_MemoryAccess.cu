@@ -177,9 +177,12 @@ __device__ __forceinline__ void tile_gemm_v3(
         read_stage = write_stage;
     }
 
+    // 相较于 v2 最核心的改动
     // v2 的一个 STG.U16 让 lane 0..3 分别写同一行的 0,2,4,6 列，只利用一个
     // 32-byte sector 中的 8 字节。先按 MMA 的寄存器映射写 shared，再由另一组 lane
     // 沿列连续读出，这样可以改变写回分工而不改变 MMA 的寄存器布局。
+    // 即第一个循环将分散在各个 lane 的 accumulator 寄存器的结果，
+    // 通过借用一块已经用完的 shared memory，让线程先按 MMA 的布局交出结果
     #pragma unroll
     for (int m = 0; m < MMA_TILES_M; ++m) {
         #pragma unroll
@@ -210,6 +213,8 @@ __device__ __forceinline__ void tile_gemm_v3(
 
     // WARNING: 新的写回线程可能读取其他 warp 的结果，需等所有寄存器片段写入。
     __syncthreads();
+
+    // 第二个循环从 shared memory 中取元素，写回结果 y_tile_base
     for (int i = threadIdx.x * 8; i < OUTPUT_SIZE; i += NUM_THREADS * 8) {
         const int row = i / BLOCK_N;
         const int col = i % BLOCK_N;

@@ -27,6 +27,8 @@ namespace {
  * rows 是有效 M 或 N；offs_row/offs_k 是本分块在专家矩阵中的元素坐标。
  * WARNING: 此函数只发起复制，不 commit/wait；调用者必须在消费前等待整个 X/W 复制组。
  */
+
+ // 基本核心改动都在此处，此处是 global ───── cp.async ─────→ shared 体现 cp.async 的具体实现
 template<typename T, int TILE_ROWS, int BLOCK_K, int NUM_THREADS>
 __device__ __forceinline__ void copy_tile_async_v2(
     const T* matrix_group,
@@ -68,6 +70,8 @@ __device__ __forceinline__ void copy_tile_async_v2(
             //       shared 数组起点对齐，置换后的元素下标也是 8 的倍数，目标因此对齐。
             const uint32_t destination = static_cast<uint32_t>(__cvta_generic_to_shared(
                 tile + tile_smem_offset_v1<BLOCK_K>(row, tile_k)));
+            
+            // cp.async 发起复制
             asm volatile(
                 "cp.async.cg.shared.global [%0], [%1], 16, %2;\n"
                 :: "r"(destination), "l"(source), "r"(src_bytes)
@@ -156,12 +160,19 @@ __device__ __forceinline__ void tile_gemm_v2(
     //       X 与 W 的复制放入同一个 per-thread group；即使线程没有搬运任务也参与 commit。
     copy_tile_async_v2<T, BLOCK_M, BLOCK_K, NUM_THREADS>(x_group, x_tiles[0], M, K, offs_m, 0);
     copy_tile_async_v2<T, BLOCK_N, BLOCK_K, NUM_THREADS>(w_group, w_tiles[0], N, K, offs_n, 0);
+    
+    // 当 cp.async 发起复制后，cp.async.commit_group 的意思是：
+    // 把当前线程此前已发起、尚未提交的所有 cp.async 复制归为一组，供后续等待。
     asm volatile("cp.async.commit_group;\n" ::: "memory");
+    // 我发起的复制完成了吗？ 每个线程等自己提交的异步复制完成，也就是自己负责搬的那部分 X/W 已经到了下一块缓冲区。
     asm volatile("cp.async.wait_group 0;\n" ::: "memory");
 
     // WARNING: wait_group 只等待本线程提交的复制。全体线程 wait 后再做 CTA barrier，
     //          才能让消费者 warp 安全读取其他线程搬来的 X/W；标量安全路径也依赖此 barrier。
+    // 此处是等待整个 CTA 中的每个线程都是在读完当前块、等完自己的复制后才到这里。
     __syncthreads();
+
+    // 经过上述同步点后，stage = 0 即缓存区 0 以及加载好 Tile x, Tile w 数据。
 
     int read_stage = 0;
     for (int64_t offs_k = 0; offs_k < K; offs_k += BLOCK_K) {
@@ -170,6 +181,8 @@ __device__ __forceinline__ void tile_gemm_v2(
         //       + 表示复制可以在后台推进；并不保证所有数据搬运延迟都能被当前块计算覆盖。
         const int write_stage = read_stage ^ 1;
         const int64_t next_k = offs_k + BLOCK_K;
+        
+        // 先发起对下一个阶段需要使用到的 Tile x, Tile w 加载。
         if (next_k < K) {
             // WARNING: 此 stage 上次的所有 ldmatrix 已在上一轮末尾 barrier 前完成。
             //          第一次使用 stage 1 时它尚未被读取，因此同样可以安全写入。
@@ -179,6 +192,7 @@ __device__ __forceinline__ void tile_gemm_v2(
             copy_tile_async_v2<T, BLOCK_N, BLOCK_K, NUM_THREADS>(
                 w_group, w_tiles[write_stage], N, K, offs_n, next_k
             );
+            // 提交等待线程组
             asm volatile("cp.async.commit_group;\n" ::: "memory");
         }
 
@@ -236,6 +250,7 @@ __device__ __forceinline__ void tile_gemm_v2(
         // NOTE: 核心改动 4（交接/排空）：最多一个未完成组，所以双缓冲用 wait_group 0。
         //       wait_group 1 会允许唯一的下一块仍在复制，随后读它就会发生竞态。
         //       等待放在计算之后，只有尚未被计算覆盖的复制时间会在这里形成停顿。
+        // 即可以理解为 前一缓存区中数据计算完成，即将用到此次异步加载的下一缓冲区，先要确保下一缓冲区加载完成
         asm volatile("cp.async.wait_group 0;\n" ::: "memory");
 
         // WARNING: 此 barrier 同时保证两件事：

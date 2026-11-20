@@ -141,8 +141,10 @@ __device__ __forceinline__ void tile_gemm_v1(
 
     // NOTE: 优先沿 M 放置 warp，剩余 warp 沿 N 排列；兼容现有 128/256/512 线程配置。
     //       案例默认 BLOCK_M = 32, BLOCK_N = 64, BLOCK_K = 32, NUM_THREAD = 128
-    //       那么可知 NUM_WARPS = 4, 如下可以计算得到 WARPS_M = 2, WARPS_N = 2，
-    //       WARPS_M 表示 Tile 在 M 维度需要多个 Warp 完成，WARPS_N 表示 Tile 在 N 维度上需要多少个 Warp 完成 
+    //       那么可知 NUM_WARPS = 4, 如下可以计算得到 WARPS_M = 2, WARPS_N = 2.
+    // 一个 warp 负责计算完一次 MMA
+    // WARPS_M 表示 Tile 在 M 维度需要多个 MMA 完成
+    // WARPS_N 表示 Tile 在 N 维度上需要多少个 MMA 完成 
     //       规定 WARPS_M * WARPS_N = NUM_WARPS
     //       在此处每个 warp 算 16x32, 一个 warp 的 16x32 由 N 方向的 4 个 16x8 MMA tile 拼成。
     constexpr int WARPS_M = BLOCK_M / MMA_M < NUM_WARPS ? BLOCK_M / MMA_M : NUM_WARPS;
@@ -150,6 +152,7 @@ __device__ __forceinline__ void tile_gemm_v1(
     static_assert(NUM_WARPS % WARPS_M == 0 && BLOCK_M % WARPS_M == 0,
                   "warps must evenly partition CTA M");
     static_assert(BLOCK_N % WARPS_N == 0, "warps must evenly partition CTA N");
+
     // WARP_M 表示每个 Warp 在 Tile M 维度上需要负责多少行，在此处为 16
     // WARP_N 表示每个 Warp 在 Tile N 维度上需要负责多少列，在此处为 32
     constexpr int WARP_M = BLOCK_M / WARPS_M;
@@ -168,7 +171,10 @@ __device__ __forceinline__ void tile_gemm_v1(
     const int tid = threadIdx.x;
     const int warp_id = tid / 32;   // 看 thread 在哪个 warp
     const int lane_id = tid % 32;   // 看 thread 在 warp 内的 thread idx
+    
+    // warp_m 表示在 Tile 上 M 维度 MMA 级别的偏移
     const int warp_m = (warp_id / WARPS_N) * WARP_M;
+    // warp_n 表示在 Tile 上 N 维度 MMA 级别的偏移
     const int warp_n = (warp_id % WARPS_N) * WARP_N;
 
     const T* x_tile_base = x_group + int64_t(offs_m) * K;
@@ -217,9 +223,13 @@ __device__ __forceinline__ void tile_gemm_v1(
         // BK = 32 需要沿 K 执行两轮 m16n8k16；BK = 16 只需要一轮。
         #pragma unroll
         for (int tile_k = 0; tile_k < BLOCK_K; tile_k += MMA_K) {
+            // 对于一个 16 × 16 的 FP16/BF16 矩阵 A，总共有  256$ 个 16-bit 元素。
+            // 整个 warp 有 32 个线程，平均每个线程负责 $256 / 32 = 8$ 个 16-bit 元素；
+            // 而 1 个 uint32_t 正好打包 2 个 16-bit 元素，所以每个线程需要 4 个 uint32_t 寄存器（共 8 个元素）。
             uint32_t a_fragment[MMA_TILES_M][4];
             uint32_t b_fragment[MMA_TILES_N][2];
 
+            // // ldmatrix 把共享内存里的 A 搬进 warp 各线程的寄存器，排成 mma.sync 要求的格式。
             // A[16,16] 拆成 4 个 8x8；x4 的四组 lane 各提供 8 个行首地址：
             //   lane  0..7  -> A[0..7,   0..7]，lane  8..15 -> A[8..15,  0..7]
             //   lane 16..23 -> A[0..7,  8..15]，lane 24..31 -> A[8..15, 8..15]
@@ -232,7 +242,7 @@ __device__ __forceinline__ void tile_gemm_v1(
                 const uint32_t address = static_cast<uint32_t>(__cvta_generic_to_shared(
                     x_tile + tile_smem_offset_v1<BLOCK_K>(row, k)));
 
-                // shared PTX 使用共享内存地址空间，不能直接把普通 64-bit 指针截断。
+                // shared PTX 使用共享内存地址空间
                 asm volatile(
                     "ldmatrix.sync.aligned.m8n8.x4.shared.b16 {%0, %1, %2, %3}, [%4];\n"
                     : "=r"(a_fragment[mma_m][0]), "=r"(a_fragment[mma_m][1]),
